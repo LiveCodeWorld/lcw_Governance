@@ -7,6 +7,13 @@ type: controller
 version: 0.2
 
 
+--> Menu | Props
+-
+getprop display_Params
+   return "Task,Projects,MyTasks,-,Unlimited,DEIP,-,Project,Project Sections"
+end display_Params
+
+
 --> Global | Governance | Menu
 -
 on menu_Workspaces
@@ -19,13 +26,10 @@ end _
 on menu_Display indexView, displayWhat
    switch displayWhat
       case "Task"
-         put asana_FetchTask (843450062880453) into someArray
+         put asana_FetchTaskArray (843450062880453) into someArray
          break
       case "Projects"
          put asana_FetchProjectTaskArray ("841158745720522") into someArray
-         break
-      case "MyTasks"
-         put asana_FetchMyTaskArray (14716922790568) into someArray
          break
       case "-"
       case "Unlimited"
@@ -49,9 +53,9 @@ end menu_Display
 on _
 end _
 
-on menu_ApiHelp
-   launch url "afsd"
-end menu_ApiHelp
+on menu_AsanaApiHelp
+   launch url "https://asana.com/developers/documentation/getting-started/errors"
+end menu_AsanaApiHelp
 
 
 --> Global | Governance | Menu | Props

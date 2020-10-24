@@ -27,7 +27,7 @@ end menu_WorkspaceMembers
 
 on menu_WorkspaceProjects indexView
    put the selected_Value of indexView into workspaceID
-   put asana_FetchProjectsArray (workspaceID) into projectsArray
+   put asana_FetchWorkspaceProjectsArray (workspaceID) into projectsArray
    put the selected_Index of indexView into workspaceName
    --
    display_Lines projectsArray, workspaceName, "mDoubleUp_AsanaProject", "Asana Project", true

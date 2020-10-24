@@ -24,6 +24,269 @@ end dep_StackNames
 
 --> Working on
 -
+function asana_FetchMyTaskMarkdown  workspaceName, pWhich
+   -- https://app.asana.com/0/760916584371100/list
+   -- https://app.asana.com/0/760916584371100/calendar
+   -- https://app.asana.com/0/760916584371100/files
+   
+   if pWhich is empty then put "Today" into pWhich
+   
+   put asana_FetchWorkSpaceID (workspaceName) into workspaceID
+   --
+   -- put asana_FetchMyWorkshopTaskArray (workspaceID, true) into myWorkshopTaskArray  
+   put asana_FetchMyWorkshopTaskArray (workspaceID, true) into myWorkshopTaskArray  
+   put asana_ConstructMyTaskArray (myWorkshopTaskArray, false) into myTaskArray
+   --
+   put myTaskArray [pWhich] into indexTaskArray
+   repeat for each key indexNum in indexTaskArray
+      put indexTaskArray [indexNum]["gid"] into taskID
+      put indexTaskArray [indexNum]["name"] into taskName
+      --
+      put asana_FetchTaskArray (taskID) into taskArray
+      put taskArray ["data"]["assignee_status"] into assigneeStatus
+      switch assigneeStatus
+         case "Today"
+            -- https://app.asana.com/0/760916584371100/1155025743225649
+            
+            -- put taskArray ["data"]["gid"] into taskID
+            -- put taskArray ["data"]["name"] into taskName
+            
+            put taskArray ["data"]["workspaceID"] into wsID
+            put taskArray ["data"]["projects"] into projectsArray
+            put taskArray ["data"]["tags"] into taskTags
+            --
+            put taskArray ["data"]["html_notes"] into taskHTML
+            _FormatTaskHtml taskHTML
+            --
+            put merge ("https://app.asana.com/0/760916584371100/[[taskID]]") into taskURL
+            
+            put "- [" & taskURL && taskName & "]" & CR after myTaskMarkDown
+            break
+      end switch
+   end repeat
+   delete char -1 of myTaskMarkDown
+   return myTaskMarkDown
+end asana_FetchMyTaskMarkdown
+
+private command _SetAsanaUserID @pUserID
+   if pUserID is empty then put 14716884063745 into pUserID
+end _SetAsanaUserID
+
+
+--> Asana | Tasks
+-
+function asana_FetchUserTaskArray workspaceID, pUserID
+   -- new way, but why do we need pUserID
+   local myTaskArray
+   
+   /*
+   put asana_FetchWorkspaceTaskListArray (workspaceID, pUserID) into workspaceTaskListArray
+   put workspaceTaskListArray ["data"]["gid"] into userTaskListID   
+   if userTaskListID is empty then return empty
+   put asana_FetchUserTasks (userTaskListID) into responseArray
+   -- put workspaceTaskListArray ["data"]["name"] into userTaskListName
+   */
+   
+   put asana_FetchMyWorkshopTaskArray (workspaceID, true) into myWorkshopTaskArray  
+   put asana_ConstructMyTaskArray (myWorkshopTaskArray, true) into myTaskArray
+   return myTaskArray
+end asana_FetchUserTaskArray
+
+function asana_FetchTaskArray taskID, pWhichFields
+   put taskID into pathBit
+   if pWhichFields is not false then
+      put "?opt_fields=notes,html_notes,name,projects,workspace,tags,start_on,likes,assignee_status" after pathBit
+   end if
+   --
+   put asana_FetchArray ("tasks", pathBit) into someArray
+   return someArray
+end asana_FetchTaskArray
+
+function asana_FetchMyWorkshopTaskArray workspaceID, pIncomplete
+   -- You should specify one of workspace, project, tag, section
+   
+   put "?" into pathBit
+   put "workspace=" & workspaceID after pathBit
+   put "&assignee=me" after pathBit
+   put "&opt_fields=name,assignee_status" after pathBit
+   if pIncomplete is true then
+      put "&completed_since=now" after pathBit
+   end if
+   --
+   put asana_FetchArray ("tasks", pathBit) into someArray
+   return someArray
+end asana_FetchMyWorkshopTaskArray
+
+function asana_FetchWorkspaceTaskListArray workspaceID, pUserID
+   -- users/{user_gid}/user_task_list?workspace=1234
+   _SetAsanaUserID pUserID
+   put pUserID & "/user_task_list?workspace=" & workspaceID into restPathID
+   put asana_FetchArray ("users", restPathID) into someArray
+   return someArray
+end asana_FetchWorkspaceTaskListArray
+
+function asana_ConstructMyTaskArray responseArray, pMakePretty
+   local inboxArray, todayArray, upcomingArray, laterArray
+   
+   put responseArray ["data"] into dataArray
+   repeat for each key indexNum in dataArray
+      put dataArray [indexNum] into taskArray
+      put taskArray ["assignee_status"] into assigneeStatus
+      --
+      switch assigneeStatus
+         case "inbox"
+            _AddToMyTaskArray inboxArray, taskArray, pMakePretty
+            break
+         case "Today"
+            _AddToMyTaskArray todayArray, taskArray, pMakePretty
+            break
+         case "Upcoming"
+            _AddToMyTaskArray upcomingArray, taskArray, pMakePretty
+            break
+         case "Later"
+            _AddToMyTaskArray laterArray, taskArray, pMakePretty
+            break
+         default
+            _AddToMyTaskArray otherArray, taskArray, pMakePretty
+      end switch
+   end repeat
+   --
+   put inboxArray into myTaskArray ["Recently Assigned"]
+   put todayArray into myTaskArray ["Today"]
+   put upcomingArray into myTaskArray ["Upcoming"]
+   put laterArray into myTaskArray ["Later"]
+   
+   if otherArray is an array then
+      breakpoint
+      put otherArray into myTaskArray ["Other"]
+   end if
+   return myTaskArray
+end asana_ConstructMyTaskArray
+
+private command _AddToMyTaskArray @arrayOrIndex, taskArray, pMakePretty
+   if pMakePretty is true then
+      put taskArray ["gid"] into taskID
+      put taskArray ["name"] into taskName
+      --
+      -- put taskID into arrayOrIndex [taskName]
+      put taskName & CR after arrayOrIndex
+   else
+      array_AddToNumbered arrayOrIndex, taskArray
+   end if
+end _AddToMyTaskArray
+
+function asana_FetchWorkSpaceID workspaceName
+   put asana_FetchWorkSpaceArray() into workspaceArray
+   return workspaceArray [workspaceName]
+end asana_FetchWorkSpaceID
+
+command asana_AddMyTaskArray @myTaskArray, workspaceID, pUserID
+   _SetAsanaUserID pUserID
+   put asana_FetchWorkspaceTaskListArray (workspaceID, pUserID) into workspaceTaskListArray
+   --
+   put workspaceTaskListArray ["data"]["gid"] into userTaskListID   
+   put workspaceTaskListArray ["data"]["name"] into userTaskListName
+   --
+   if userTaskListID is empty then return empty
+   --
+   put asana_FetchUserTasks (userTaskListID) into userTaskArray
+   put userTaskArray ["data"] into myTaskArray [userTaskListName]
+   return userTaskArray
+end asana_AddMyTaskArray
+
+function asana_FetchUserTasks userTaskListID
+   /*
+   -- GET /user_task_lists/{user_task_list_gid}/tasks
+   GET /user_task_lists/159xxxxxxxxx130/tasks?completed_since=now&opt_fields=name,assignee_status
+   
+   completed_since=now will filter out completed tasks and give you only uncompleted tasks.
+   assignee_status is the string value of the section - i.e. "today, “upcoming”, “later”, etc.
+   */
+   
+   put userTaskListID & "/tasks" into restPathID
+   put "?completed_since=now&opt_fields=name,assignee_status" after restPathID
+   --
+   put asana_FetchArray ("user_task_lists", restPathID) into someArray
+   return someArray
+end asana_FetchUserTasks
+
+function asana_FetchUserTaskListArray userTaskListID
+   -- user_task_lists/{user_task_list_gid}
+   
+   put asana_FetchArray ("user_task_lists", userTaskListID) into someArray
+   return someArray
+end asana_FetchUserTaskListArray
+
+function asana_FetchTaskNotes taskID
+   -- https://app.asana.com/api/1.0/tasks/1001
+   put asana_FetchTaskArray (taskID) into taskArray
+   put taskArray ["data"]["html_notes"] into taskHTML
+   _FormatTaskHtml taskHTML
+   return taskHTML
+end asana_FetchTaskNotes
+
+function asana_ParseTaskArray projectTaskData
+   put empty into sectionTitle
+   put empty into sectionTaskNames
+   repeat with lineNum =1 to item 2 of the extents of projectTaskData
+      get projectTaskData [lineNum]["resource_type"]
+      -- if it is not "task" then next repeat -- they are all tasks
+      
+      put projectTaskData [lineNum]["gid"] into gid
+      put projectTaskData [lineNum]["name"] into taskName
+      put gid into taskNameArray [taskName]
+      --
+      switch
+         case char -1 of taskName = ":"
+            -- old way of marking sections
+            put lineNum & comma after sectionLineNums
+            --
+            put taskName into sectionTitle
+            put empty into taskArray [sectionTitle]
+            break
+         case sectionTitle is empty
+            put empty into taskArray [taskName]
+            break
+         default
+            put empty into taskArray [sectionTitle][taskName]
+      end switch
+      --
+      put taskName & CR after taskNames
+      put gid into lineNumArray [lineNum]
+   end repeat
+   delete char -1 of sectionLineNums
+   delete char -1 of taskNames
+   --
+   put taskNames into parsedArray ["taskNames"]
+   put sectionLineNums into parsedArray ["sectionLineNums"]
+   put taskArray into parsedArray ["taskArray"]
+   put taskNameArray into parsedArray ["taskNameArray"]
+   --
+   return parsedArray
+end asana_ParseTaskArray
+
+command asana_DeconstructTaskData responseArray, @taskName, @taskNotes, @assigneeName, @assigneeID, @hearts, @likes
+   put responseArray ["data"] into taskData
+   --
+   put taskData ["name"] into taskName
+   put taskData ["notes"] into taskNotes
+   --
+   put taskData ["projects"] into taskProjectArray
+   --
+   put taskData ["assignee"]["name"] into assigneeName
+   put taskData ["assignee"]["gid"] into assigneeID
+   --
+   put taskData ["hearted"] into hearted
+   put taskData ["hearts"] into hearts
+   put taskData ["liked"] into liked
+   put taskData ["likes"] into likes
+   --
+   return taskNotes
+end asana_DeconstructTaskData
+
+
+--> Asana | Wiki
+-
 command asana_CreateTaskFromWiki droppedURL
    put fedwiki_FetchDroppedFlagJson (droppedURL) into pageJSON
    put json_ToArray (pageJSON) into pageArray
@@ -78,7 +341,7 @@ function asana_FetchProjectPageArray projectID
 end asana_FetchProjectPageArray
 
 function asana_FetchTaskPageArray taskID
-   put asana_FetchArray ("tasks", taskID, true) into taskArray
+   put asana_FetchTaskArray (taskID) into taskArray
    _DeconstructTaskArray taskArray, taskName, taskHTML, taskTags
    --
    put taskName into fedwikiPageArray ["title"]
@@ -92,7 +355,7 @@ function asana_FetchTaskPageArray taskID
       put subtaskArray [keyNum]["resource_type"] into resourceType
       if resourceType is not "task" then next repeat
       
-      put asana_FetchArray ("tasks", subtaskID, true) into sArray
+      put asana_FetchTaskArray (subtaskID) into sArray
       _DeconstructTaskArray sArray, subtaskName, subtaskHTML, subtaskTags
       --
       pageArray_SetTitle fedwikiPageArray, subtaskName
@@ -108,14 +371,6 @@ private command _DeconstructTaskArray taskArray, @taskName, @taskHTML, @taskTags
    _FormatTaskHtml taskHTML
    put taskArray ["data"]["tags"] into taskTags
 end _DeconstructTaskArray
-
-function asana_FetchTaskNotes taskID
-   -- https://app.asana.com/api/1.0/tasks/1001
-   put asana_FetchArray ("tasks", taskID, true) into taskArray
-   put taskArray ["data"]["html_notes"] into taskHTML
-   _FormatTaskHtml taskHTML
-   return taskHTML
-end asana_FetchTaskNotes
 
 private command _FormatTaskHtml @taskHTML
    replace "</body>" with empty in taskHTML
@@ -324,7 +579,7 @@ function asana_FetchProjectTaskInfo projectTaskData
    repeat for each key itemNum in projectTaskData
       set the cursor to busy
       put projectTaskData [itemNum]["gid"] into taskID
-      put asana_FetchTask (taskID) into responseArray
+      put asana_FetchTaskArray (taskID) into responseArray
       --
       asana_DeconstructError responseArray, dataArray, firstError
       if the result is true then
@@ -374,10 +629,22 @@ end asana_FetchProjectTaskArray
 function asana_FetchProjectTasks projectID, pNotesOnly
    -- https://app.asana.com/api/1.0/projects/1331/tasks
    put projectID & "/tasks" into pathBit
-   put asana_FetchArray ("projects", pathBit, pNotesOnly) into someArray
+   put asana_FetchProjectArray (pathBit) into someArray
    return someArray
 end asana_FetchProjectTasks
 
+function asana_FetchProjectArray projectID
+   put "projects" into restPath
+   if projectID is not empty then
+      put "/" & projectID after restPath
+   end if
+   --
+   put "?opt_fields=html_notes,name,projects,workspace,tags,start_on,likes" after restPath
+   --
+   put asana_FetchJSON (restPath) into someJSON
+   put json_ToArray (someJSON) into someArray
+   return someArray
+end asana_FetchProjectArray
 
 --> Asana | Teams
 -
@@ -446,75 +713,6 @@ function asana_GetTaskLikeArray taskData
    put taskData ["likes"] into likeArray
    return likeArray
 end asana_GetTaskLikeArray
-
-
---> Asana | Tasks
--
-function asana_FetchTask taskID
-   -- https://app.asana.com/api/1.0/tasks/1001
-   put asana_FetchArray ("tasks", taskID) into someArray
-   return someArray
-end asana_FetchTask
-
-function asana_ParseTaskArray projectTaskData
-   put empty into sectionTitle
-   put empty into sectionTaskNames
-   repeat with lineNum =1 to item 2 of the extents of projectTaskData
-      get projectTaskData [lineNum]["resource_type"]
-      if it is not "task" then next repeat
-      
-      put projectTaskData [lineNum]["gid"] into gid
-      put projectTaskData [lineNum]["name"] into taskName
-      put gid into taskNameArray [taskName]
-      --
-      switch
-         case char -1 of taskName = ":"
-            put lineNum & comma after sectionLineNums
-            --
-            put taskName into sectionTitle
-            put empty into taskArray [sectionTitle]
-            break
-         case sectionTitle is empty
-            put empty into taskArray [taskName]
-            break
-         default
-            put empty into taskArray [sectionTitle][taskName]
-      end switch
-      --
-      put taskName & CR after taskNames
-      put gid into lineNumArray [lineNum]
-   end repeat
-   delete char -1 of sectionLineNums
-   delete char -1 of taskNames
-   --
-   put taskNames into parsedArray ["taskNames"]
-   put sectionLineNums into parsedArray ["sectionLineNums"]
-   put taskArray into parsedArray ["taskArray"]
-   put taskNameArray into parsedArray ["taskNameArray"]
-   --
-   return parsedArray
-end asana_ParseTaskArray
-
-function asana_FetchMyTaskArray pWorkspaceID
-   put asana_FetchMyWorkspaceTasks (pWorkspaceID) into responseArray
-   put _ConstructNameArray (responseArray, "task") into taskArray
-   return taskArray
-end asana_FetchMyTaskArray
-
-function asana_FetchMyWorkspaceTasks pWorkspaceID
-   -- You should specify one of workspace, project, tag, section
-   -- https://app.asana.com/api/1.0/tasks?workspace=14916&assignee=me
-   put "?" into pathBit
-   if pWorkspaceID is empty then
-      put "assignee=me" after pathBit
-   else
-      put "workspace=" & pWorkspaceID after pathBit
-      put "&assignee=me" after pathBit
-   end if
-   --
-   put asana_FetchArray ("tasks", pathBit) into someArray
-   return someArray
-end asana_FetchMyWorkspaceTasks
 
 
 --> Asana | users
@@ -589,6 +787,15 @@ end asana_FetchTeamUserData
 
 --> Asana | Workspace
 -
+function asana_FetchMyTasks workspaceName, pWhich
+   if pWhich is empty then put "Today" into pWhich
+   
+   put asana_FetchWorkSpaceID (workspaceName) into workspaceID
+   put asana_FetchUserTaskArray (workspaceID) into myTaskArray
+   put myTaskArray [pWhich] into myTaskNames
+   return myTaskNames
+end asana_FetchMyTasks
+
 function asana_FetchWorkspaceProjectsArray workspaceID
    put asana_FetchWorkspaceProjects (workspaceID) into responseArray
    put _ConstructNameArray (responseArray, "project") into projectsArray
@@ -608,6 +815,13 @@ function asana_FetchWorkspaceInfoArray workspaceID
    put asana_FetchArray ("workspaces", workspaceID) into someArray
    return someArray
 end asana_FetchWorkspaceInfoArray
+
+function asana_FetchWorkspaceNames
+   put asana_FetchWorkSpaceArray() into workspaceArray
+   put keys (workspaceArray) into workspaceNames
+   sort workspaceNames
+   return workspaceNames
+end asana_FetchWorkspaceNames
 
 function asana_FetchWorkSpaceArray
    put asana_FetchMe() into asanaArray
@@ -699,14 +913,10 @@ end asana_DeconstructError
 
 --> Asana | REST
 -
-function asana_FetchArray pathStem, pPathID, pNotesOnly
+function asana_FetchArray pathStem, pPathID
    put pathStem into restPath
    if pPathID is not empty then
       put "/" & pPathID after restPath
-   end if
-   --
-   if pNotesOnly is true then
-      put "?opt_fields=html_notes,name,projects,workspace,tags,start_on,likes" after restPath
    end if
    --
    put asana_FetchJSON (restPath) into someJSON
@@ -775,7 +985,8 @@ function asana_GetAuthenticationToken
 end asana_GetAuthenticationToken
 
 command asana_SetAuthenticationToken oAuthToken
-   secret_Set "AsanaAuthenticationToken", "asana", oAuthToken
+   pref_SaveValue "AsanaAuthenticationToken", oAuthToken -- only for local
+   -- secret_Set "AsanaAuthenticationToken", "asana", oAuthToken
    put the result into modelDataFile
    return modelDataFile
 end asana_SetAuthenticationToken
@@ -787,28 +998,24 @@ command rest_SetUserAgent
    set the httpheaders to "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
 end rest_SetUserAgent
 
+command array_AddToNumbered @indexedArray, keyOrArray, pValue
+   /*
+   Adds a value to the end of an indexed array.
+   Value can be simple or an array
+   If someKey is an array it adds the array
+   */
+   
+   put item 2 of the extents of indexedArray + 1 into newIndexNum
+   if keyOrArray is an array then
+      put keyOrArray into indexedArray [newIndexNum]
+   else
+      put pValue into indexedArray [newIndexNum][keyOrArray]
+   end if
+   return newIndexNum
+end array_AddToNumbered
 
 --> Private
 -
-private command asana_DeconstructTaskData responseArray, @taskName, @taskNotes, @assigneeName, @assigneeID, @hearts, @likes
-   put responseArray ["data"] into taskData
-   --
-   put taskData ["name"] into taskName
-   put taskData ["notes"] into taskNotes
-   --
-   put taskData ["projects"] into taskProjectArray
-   --
-   put taskData ["assignee"]["name"] into assigneeName
-   put taskData ["assignee"]["gid"] into assigneeID
-   --
-   put taskData ["hearted"] into hearted
-   put taskData ["hearts"] into hearts
-   put taskData ["liked"] into liked
-   put taskData ["likes"] into likes
-   --
-   return taskData
-end asana_DeconstructTaskData
-
 private function _ConstructNameArray responseArray, resourceType
    put responseArray ["data"] into dataArray
    repeat for each key itemNum in dataArray

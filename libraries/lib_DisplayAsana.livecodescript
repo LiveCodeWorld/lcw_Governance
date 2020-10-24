@@ -4,8 +4,69 @@
 license: GPLv3
 name: lib_DisplayAsana
 type: library
-version: 0.1
+version: 0.2
 
+
+--> Working on
+-
+on mDoubleUp_AsanaTask indexView, taskName
+   put the selected_Index of indexView into taskName
+   put the displayed_Data of indexView into taskNameArray
+   put taskNameArray [taskName] into taskID
+   --
+   if char -1 of taskName = ":" then
+      -- section
+   else
+      display_AsanaTask taskID
+   end if
+end mDoubleUp_AsanaTask
+
+on mDoubleUp_AsanaTeams indexView, teamName
+   put the meta_Data ["workspaceID"] of indexView into workspaceID
+   put the meta_Data ["workspaceName"] of indexView into workspaceName
+   put the meta_Data ["teamArray"] of indexView into teamArray
+   put teamArray [teamName] into teamID
+   -- put asana_FetchTeamsArray (workspaceID) into teamArray
+   --
+   display_AsanaTeam teamID, teamName
+end mDoubleUp_AsanaTeams
+
+on mDoubleUp_AsanaTeam indexView, userName
+   put the meta_Data ["teamID"] of indexView into teamID
+   put the meta_Data ["teamName"] of indexView into teamName
+   put the meta_Data ["userTeamArray"] of indexView into userTeamArray
+   --
+   put userTeamArray [userName] into userID
+   display_AsanaUser userID
+end mDoubleUp_AsanaTeam
+
+
+--> Display
+-
+command display_AsanaTask taskID, pTitle
+   if taskID is empty then
+      breakpoint -- debug
+      return empty
+   end if
+   --
+   put asana_FetchTaskArray (taskID) into responseArray
+   asana_DeconstructTaskData responseArray, taskName, taskNotes, assigneeName, assigneeID, hearts, likes
+   put the result into taskNotesHtml
+   --
+   if pTitle is empty then
+      put taskName into pTitle
+   end if
+   --
+   display_Lines taskNotesHtml, pTitle, empty, "Asana Task"
+   put the result into indexView
+   set the field_Style of indexView to "text"
+   set the title_Menu of indexView to "Global | Asana | Tree | Menu"
+   set the line_Menu of indexView to "Global | Asana | Tree | Line | Menu"
+   --
+   set the task_ID of indexView to taskID
+   -- set the displayed_Data of indexView to taskData
+   return indexView
+end display_AsanaTask
 
 command display_AsanaUser userID
    if userID is empty then
@@ -31,14 +92,26 @@ command display_AsanaUser userID
    set the label of stack cloneStackName to userName
    --
    show stack cloneStackName -- "Asana User 1"
-   -- put the name of stack cloneStackName into cloneStackObject
    --
    return cloneStackObject
 end display_AsanaUser
 
+command display_AsanaTeam teamID, teamName
+   put asana_FetchTeamUserArray (teamID) into userTeamArray
+   --
+   display_Lines userTeamArray, teamName, "mDoubleUp_AsanaTeam", "Asana Team", true
+   put the result into indexView
+   --
+   set the title_Menu of indexView to "Global | Asana | Team | Tree | Menu"
+   set the line_Menu of indexView to "Global | Asana | Team | Tree | Line | Menu"
+   --
+   set the meta_Data ["teamID"] of indexView to teamID
+   set the meta_Data ["teamName"] of indexView to teamName
+   set the meta_Data ["userTeamArray"] of indexView to userTeamArray
+   --
+   return displayView
+end display_AsanaTeam
 
---> Display
--
 on display_AsanaWorkspaces
    local inspectCommand, mDoubleUpCommand
    put asana_FetchWorkSpaceArray() into someArray
@@ -67,7 +140,7 @@ end display_AsanaWorkspace
 command display_AsanaTeams workspaceID, workspaceName
    put asana_FetchTeamsArray (workspaceID) into teamArray
    --
-   display_Lines teamArray, workspaceName, "mDoubleUp_AsanaTeam", "Asana Teams", true
+   display_Lines teamArray, workspaceName, "mDoubleUp_AsanaTeams", "Asana Teams", true
    put the result into displayView
    --
    set the title_Menu of displayView to "Global | Asana | Team | Tree | Menu"
@@ -75,6 +148,7 @@ command display_AsanaTeams workspaceID, workspaceName
    --
    set the meta_Data ["workspaceID"] of displayView to workspaceID
    set the meta_Data ["workspaceName"] of displayView to workspaceName
+   set the meta_Data ["teamArray"] of displayView to teamArray
    --
    return displayView
 end display_AsanaTeams
@@ -120,30 +194,6 @@ command display_AsanaProject projectID, projectName, pIndexView
    return displayView
 end display_AsanaProject
 
-command display_AsanaTask taskID, pTitle
-   if taskID is empty then
-      breakpoint -- debug
-      return empty
-   end if
-   --
-   put asana_FetchTask (taskID) into responseArray
-   asana_DeconstructTaskData responseArray, taskName, taskNotes, assigneeName, assigneeID, hearts, likes
-   put the result into taskData
-   --
-   if pTitle is empty then
-      put taskName into pTitle
-   end if
-   display_Lines taskNotes, pTitle, empty, "Asana Task"
-   put the result into indexView
-   set the field_Style of indexView to "text"
-   set the title_Menu of indexView to "Global | Asana | Tree | Menu"
-   set the line_Menu of indexView to "Global | Asana | Tree | Line | Menu"
-   --
-   set the task_ID of indexView to taskID
-   set the displayed_Data of indexView to taskData
-   return indexView
-end display_AsanaTask
-
 command display_AsanaWorkspaceMembers workspaceID, pTitle
    if workspaceID is empty then
       breakpoint -- debug
@@ -170,18 +220,6 @@ on mDoubleUp_AsanaUser indexView, userName
    -- display_Array userWorkspaceArray
 end mDoubleUp_AsanaUser
 
-on mDoubleUp_AsanaTask indexView, taskName
-   put the selected_Index of indexView into taskName
-   put the displayed_Data of indexView into taskNameArray
-   put taskNameArray [taskName] into taskID
-   --
-   if char -1 of taskName = ":" then
-      -- section
-   else
-      display_AsanaTask taskID
-   end if
-end mDoubleUp_AsanaTask
-
 on mDoubleUp_AsanaWorkSpaces indexView, workspaceName
    put the selected_Value of indexView into workspaceID
    display_AsanaWorkspace workspaceID, workspaceName
@@ -192,7 +230,7 @@ on mDoubleUp_AsanaProject indexView, projectName
    put the displayed_Array of indexView into projectArray
    put projectArray [projectName] into projectID
    -- 
-   display_AsanaProject projectID, projectName, indexView
+   display_AsanaProject projectID, projectName
    put the result into displayView
 end mDoubleUp_AsanaProject
 

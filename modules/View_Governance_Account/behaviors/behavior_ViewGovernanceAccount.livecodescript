@@ -21,7 +21,7 @@ on arrowkey pKey
          put _GetLineArray() into lineArray
          put account_RefToDescription (lineArray) into category
          if category is empty then
-            beep
+            -- beep
          else
             _LabelLine category
          end if

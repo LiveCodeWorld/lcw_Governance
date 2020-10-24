@@ -14,7 +14,7 @@ on menu_DisplayTaskArray indexView
    put the displayed_Data of indexView into taskNameArray
    put taskNameArray [taskName] into taskID
    --
-   put asana_FetchTask (taskID) into responseArray
+   put asana_FetchTaskArray (taskID) into responseArray
    put responseArray ["data"] into projectTaskData
    display_Array projectTaskData
    put asana_FetchTaskNotes (taskID)
