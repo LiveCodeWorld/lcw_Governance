@@ -26,6 +26,23 @@ on menu_Init tObject
    put someMonths into LocalArray ["someMonths"]
 end menu_Init
 
+getprop displayCategorized_Params [accountView]
+   -- account_Names
+   put account_ListKeys() into accountKeys
+   return accountKeys
+end displayCategorized_Params
+
+getprop displayMonth_Params [accountView]
+   -- some_Months
+   put LocalArray ["someMonths"] into someMonths
+   return someMonths
+end displayMonth_Params
+
+getprop checked_ShowGraph [accountView]
+   put the graph_Visible of accountView into someBoolean
+   return someBoolean
+end checked_ShowGraph
+
 
 --> Global | Governance | Account | Menu
 -
@@ -163,8 +180,9 @@ end menu_GenerateRandomData
 on _
 end _
 
-on menu_ShowGraph accountView, someBoolean
-   set the graph_Visible of accountView to someBoolean
+on menu_ShowGraph accountView
+   put the graph_Visible of accountView into sBoolean
+   set the graph_Visible of accountView to (sBoolean is false)
 end menu_ShowGraph
 
 on submenu_Dev
@@ -208,25 +226,3 @@ on menu_DisplayAccountData accountView
    put the dg_Data of accountView into someData
    display_Array someData
 end menu_DisplayAccountData
-
-
---> Global | Governance | Account | Menu | Props
--
-getprop account_Names [accountView]
-   put account_ListKeys() into accountKeys
-   return accountKeys
-end account_Names
-
-getprop some_Months [accountView]
-   put LocalArray ["someMonths"] into someMonths
-   return someMonths
-end some_Months
-
-getprop show_Graph [accountView]
-   put the graph_Visible of accountView into someBoolean
-   return someBoolean
-end show_Graph
-
-
---> Global | Governance | Account | Menu | Disabled
--

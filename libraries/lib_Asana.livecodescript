@@ -24,6 +24,27 @@ end dep_StackNames
 
 --> Working on
 -
+function asana_ConvertHtml someHTML
+   -- put pageArray_Fetch("festivaljam.org", "design-considerations") into pageArray
+   -- put pageArray ["story"][1]["text"] into someHTML
+   --
+   replace "<p>" with empty in someHTML
+   repeat
+      if matchChunk (someHTML, "(<strong>.*</strong>)\n", sChar, eChar) is true then
+         put char sChar to eChar of someHTML into someLine
+         put char 9 to -10 of someLine into someTitle
+         put "#" && someTitle into char sChar to eChar of someHTML
+      else
+         exit repeat
+      end if
+   end repeat
+   --
+   replace "<strong>" with "__" in someHTML
+   replace "</strong>" with "__" in someHTML
+   --
+   return someHTML
+end asana_ConvertHtml
+
 function asana_FetchMyTaskMarkdown  workspaceName, pWhich
    -- https://app.asana.com/0/760916584371100/list
    -- https://app.asana.com/0/760916584371100/calendar
@@ -294,12 +315,11 @@ command asana_CreateTaskFromWiki droppedURL
    put pageArray ["story"][1]["text"] into taskNotes
    put CR & CR & droppedURL after taskNotes
    --
-   -- asana_CreateWorkspaceTask workspaceID, taskName, taskNotes, pProjectID
    asana_CreateProjectTask "854783096772498", taskName, taskNotes
    put the result into responseArray
    put responseArray ["data"]["gid"] into taskID
    
-   put fedwiki_ConstructNewPageArray ("New Asana task", "Here is a link to the newly created Asana taks for this wiki page:") into fedwikiPageArray
+   put pageArray_Construct ("New Asana task", "Here is a link to the newly created Asana taks for this wiki page:") into fedwikiPageArray
    --
    put "# Asana" into someMarkdown
    -- put CR & "View this content in [[Asana]]:" after someMarkdown
@@ -340,13 +360,38 @@ function asana_FetchProjectPageArray projectID
    return fedwikiPageArray
 end asana_FetchProjectPageArray
 
+command asana_Test
+   -- https://app.asana.com/0/1199894684330889/1199936015567129
+   -- put asana_FetchTaskPageArray ("1199936015567129") into fedwikiPageArray
+   get asana_FetchTaskAttachments ("1199936015567129")
+   put it ["data"][1] into aData
+   put aData ["gid"] into attachmentID
+   put aData ["name"] into shortFile
+   put aData ["resource_type"] into aType
+   --
+   put asana_FetchAttachment (attachmentID) into someArray
+   display_Data someArray
+end asana_Test
+
+function asana_FetchAttachment attachmentID
+   -- GET /attachments/{attachment_gid}
+   put asana_FetchArray ("attachments", attachmentID) into someArray
+   return someArray
+end asana_FetchAttachment
+
+function asana_FetchTaskAttachments taskID
+   -- GET /tasks/{task_gid}/attachments
+   put taskID & "/attachments" into pathBit
+   put asana_FetchArray ("tasks", pathBit) into someArray
+   return someArray
+end asana_FetchTaskAttachments
+
 function asana_FetchTaskPageArray taskID
    put asana_FetchTaskArray (taskID) into taskArray
    _DeconstructTaskArray taskArray, taskName, taskHTML, taskTags
+   put asana_ConvertHtml (taskHTML) into taskMarkdown
    --
-   put taskName into fedwikiPageArray ["title"]
-   put pageArray_ConstructJournal (taskName) into fedwikiPageArray ["journal"] 
-   pageArray_AddHtml fedwikiPageArray, taskHTML
+   put pageArray_Construct (taskName, taskMarkdown) into fedwikiPageArray
    --
    put asana_FetchSubTasks (taskID) into subtaskArray
    repeat with keyNum = 1 to item 2 of the extents of subtaskArray
@@ -357,9 +402,11 @@ function asana_FetchTaskPageArray taskID
       
       put asana_FetchTaskArray (subtaskID) into sArray
       _DeconstructTaskArray sArray, subtaskName, subtaskHTML, subtaskTags
+      put asana_ConvertHtml (subtaskHTML) into subTaskMarkdown
       --
       pageArray_SetTitle fedwikiPageArray, subtaskName
-      pageArray_AddHtml fedwikiPageArray, subtaskHTML
+      -- pageArray_AddHtml fedwikiPageArray, subtaskHTML
+      pageArray_AddMarkdown fedwikiPageArray, subTaskMarkdown
    end repeat
    pageArray_StripJournal fedwikiPageArray
    return fedwikiPageArray

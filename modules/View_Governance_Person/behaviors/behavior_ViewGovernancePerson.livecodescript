@@ -151,7 +151,7 @@ command LayoutControl pRect
    
    put the margins of imageGroup into imageGroupMargins
    put the inner_Rect [pRect] of me into innerRect
-   rect_SubtractMargins innerRect, 2 -- hack, not sure why?
+   -- rect_SubtractMargins innerRect, 2 -- hack, not sure why?
    
    put rect_GetCentre (innerRect) into innerLoc
    put the rect of graphicObject into gRect
@@ -164,10 +164,10 @@ command LayoutControl pRect
          put item 3 of innerRect - item 1 of innerRect into innerWidth
          put item 4 of innerRect - item 2 of innerRect into innerHeight
          put min (innerWidth,innerHeight) into innerSquareWidth
-         add 1 to item 1 of innerLoc -- hack, not sure why?
-         add 1 to item 2 of innerLoc -- hack, not sure why?
+         -- add 1 to item 1 of innerLoc -- hack, not sure why?
+         -- add 1 to item 2 of innerLoc -- hack, not sure why?
          put rect_LocWidthHeight (innerLoc, innerSquareWidth, innerSquareWidth) into graphicRect
-         rect_AddMargins graphicRect, -2 -- hack, not sure why?
+         -- rect_AddMargins graphicRect, -2 -- hack, not sure why?
          
          put graphicRect into imageGroupRect
          rect_AddMargins imageGroupRect, imageGroupMargins

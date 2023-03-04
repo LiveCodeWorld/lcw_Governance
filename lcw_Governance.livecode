@@ -4,13 +4,13 @@
 license: GPLv3
 name: lcw_Governance
 type: project
-version: 0.1
+version: 0.2
 
 
---> Events
+--> Props
 -
 getprop project_Deps
-   return "lcw,lcw_Tools,lcw_Authoring,lcw_GIT,lcw_Revigniter,lcw_Script,lcw_Google,lcw_Media,lcw_Chat,lcw_Graph"
+   return "lcw,lcw_Tools,lcw_Authoring,lcw_GIT,lcw_Revigniter,lcw_Script,lcw_Google,lcw_Media,lcw_Chat,lcw_Graph,lcw_Camera,lcw_Presentation"
 end project_Deps
 
 
@@ -37,3 +37,4 @@ command lcw_Init
       dispatch "lcw_Init" to stack lcwHomePath
    end if
 end lcw_Init
+

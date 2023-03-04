@@ -9,44 +9,169 @@ version: 0.1
 local LocalArray
 
 
+--> Menu | Props
+-
+getprop test_Params
+   return "VSM,Right Bar,Bars,Cool,Block"
+end test_Params
+
+getprop shapeArray_Params
+   return "VSM,Right Bar,Bars,Cool,Block"
+end shapeArray_Params
+
+getprop shape_Param
+   return LocalArray ["which_Shape"]
+end shape_Param
+
+getprop shape_Params
+   return "VSM,Right Bar,Bars,Cool,Block"
+end shape_Params
+
+getprop buttonView_Param [gridView]
+   put the button_View of gridView into btnView
+   return true
+end buttonView_Param
+
+getprop buttonView_Params [gridView]
+   return "true,false"
+end buttonView_Params
+
+getprop fixedSquare_Param [gridView]
+   put the fixed_Square of gridView into someBoolean
+   return someBoolean
+end fixedSquare_Param
+
+getprop fixedSquare_Params
+   return "true,false"
+end fixedSquare_Params
+
+getprop showBorders_Param [gridView]
+   return the show_Borders of gridView
+end showBorders_Param
+
+getprop showBorders_Params
+   return "true,false"
+end showBorders_Params
+
+getprop showNames_Param [gridView]
+   return the show_Names of gridView
+end showNames_Param
+
+getprop showNames_Params
+   return "true,false"
+end showNames_Params
+
+getprop tilesAcross_Param [gridView]
+   return the tiles_Across of gridView
+end tilesAcross_Param
+
+getprop tilesAcross_Params
+   return "1,2,3,4,5,6,7,8,9,10"
+end tilesAcross_Params
+
+getprop checked_AuthoringBehavior [gridView]
+   return _AuthoringBehavior (gridView)
+end checked_AuthoringBehavior
+
+private function _AuthoringBehavior gridView
+   put the behavior_Objects of gridView into bObjects
+   put bObjects contains the name of stack "behavior_CreateGovernanceView" into sBoolean
+   return sBoolean
+end _AuthoringBehavior
+
+
 --> Global | Governance | Org | Menu
 -
-on menu_Shape gridView, whichShape
-   lock screen
+on menu_Test gridView, whichShape
+   put tile_GetShapeArray (whichShape) into shapeArray
+   -- put tile_GetShapeArray ("Block") into shapeArray
    --
-   put whichShape into LocalArray ["which_Shape"]
-   switch whichShape
-      case "VSM"
-         set the element_Array [10] of gridView to vsm_Shape()
-         break
-      case "Right Bar"
-         set the element_Array [10] of gridView to rightBar_Shape()
-         break
-      case "Bars"
-         set the element_Array [10] of gridView to bar_Shape()
-         break
-      case "Cool"
-         set the element_Array [10] of gridView to cool_Shape()
-         break
-      case "Block"
-         set the element_Array [10] of gridView to block_Shape()
-         break
-   end switch
+   _CreateTest
+   put the result into inObject
+   put the long id of group 1 of stack "Test Create" into inObject
+   --
+   grid_DeleteTiles inObject
+   --
+   put the inner_Rect ["20"] of card 1 of stack "Test Create" into someRect
+   -- put rect_GetSquare (someRect, 0) into someRect
+   --
+   tile_Create shapeArray, inObject, someRect, 10
+   --
+   put someRect & CR & the rect of inObject
+end menu_Test
+
+command _CreateTest
+   if exists (stack "Test Create") is false then
+      create stack "Test Create"
+   end if
    
-   -- set the show_Names of gridView to true
-   unlock screen
-end menu_Shape
+   if exists (group "Test" of card 1 of stack "Test Create") is false then
+      create group "Test" in card 1 of stack "Test Create"
+      put the result into groupObject
+   else
+      put the long id of group "Test" of card 1 of stack "Test Create" into groupObject
+   end if
+   return groupObject
+end _CreateTest
+
+on menu_Clear
+   put the long id of group 1 of stack "Test Create" into inObject
+   grid_DeleteTiles inObject
+end menu_Clear
 
 on _
 end _
 
-on menu_ButtonView gridView, someBoolean
-   set the button_View of gridView to someBoolean
-end menu_ButtonView
+on menu_DisplayLocalArray gridView
+   put the local_Array of gridView into dArray
+   put the stack_Name of gridView into sName
+   
+   display_Data dArray, "LocalArray", sName
+end menu_DisplayLocalArray
+
+on menu_ShapeArray gridView, whichShape
+   put tile_GetShapeArray (whichShape) into shapeArray
+   --
+   display_Data shapeArray, whichShape, "tile_GetShapeArray (whichShape)"
+end menu_ShapeArray
+
+on menu_Shape gridView, whichShape
+   lock screen
+   --
+   put tile_GetShapeArray (whichShape) into shapArray
+   put whichShape into LocalArray ["which_Shape"]
+   set the element_Array [10] of gridView to shapArray
+   -- set the show_Names of gridView to true
+   --
+   unlock screen
+end menu_Shape
+
+on menu_FixedSquare gridView, someBoolean
+   set the fixed_Square of gridView to someBoolean
+end menu_FixedSquare
+
+on _
+end _
+
+on menu_AuthoringBehavior gridView
+   if _AuthoringBehavior (gridView) then
+      put the name of stack "behavior_ViewGovernanceOrg" into bObject
+      set the behavior of stack "behavior_ViewGovernanceOrg" to empty
+      set the behavior of gridView to bObject
+   else
+      put the module_Behaviors of gridView into moduleBehaviors
+      set the behavior_Objects of gridView to moduleBehaviors
+   end if
+   dispatch "preOpenControl" to gridView
+end menu_AuthoringBehavior
 
 on menu_TilesAcross gridView, tileNum
    set the tiles_Across of gridView to tileNum
 end menu_TilesAcross
+
+on menu_ButtonView gridView, someBoolean
+   set the button_View of gridView to someBoolean
+end menu_ButtonView
 
 on menu_ShowNames gridView, someBoolean
    set the show_Names of gridView to someBoolean
@@ -59,6 +184,11 @@ end menu_ShowBorders
 on _
 end _
 
+on menu_Graphic gridView
+   put the control_Type of btn "Platform" of gridView
+   set the control_Type of btn "Platform" of gridView to "graphic"
+end menu_Graphic
+
 on menu_DisplayGridArray gridView
    put the grid_Array of gridView into gridArray
    display_Array gridArray
@@ -68,205 +198,4 @@ on menu_DisplayGridRectArray gridView
    put the grid_RectArray of gridView into gridRectArray
    display_Array gridRectArray
 end menu_DisplayGridRectArray
-
-on _
-end _
-
-on menu_FixedSquare gridView, someBoolean
-   set the fixed_Square of gridView to someBoolean
-end menu_FixedSquare
-
-getprop fixed_Square [gridView]
-   put the fixed_Square of gridView into someBoolean
-   return someBoolean
-end fixed_Square
-   
-on menu_Graphic gridView
-   put the control_Type of btn "Platform" of gridView
-   set the control_Type of btn "Platform" of gridView to "graphic"
-end menu_Graphic
-
-
---> Global | Governance | Org | Menu | Props
--
-getprop button_View [gridView]
-   return the button_View of gridView
-end button_View
-
-getprop show_Borders [gridView]
-   return the show_Borders of gridView
-end show_Borders
-
-getprop show_Names [gridView]
-   return the show_Names of gridView
-end show_Names
-
-getprop tile_Num [gridView]
-   return the tiles_Across of gridView
-end tile_Num
-
-getprop tile_Nums
-   return "1,2,3,4,5,6,7,8,9,10"
-end tile_Nums
-
-getprop which_Shape
-   return LocalArray ["which_Shape"]
-end which_Shape
-
-
---> Global | Governance | Org | Menu | Disabled
--
-
-
---> Private
--
-private function block_Shape
-   local eArray
-   --   
-   _AddShapeItem eArray, "Guardians", "yellow", "1,1,7,3" 
-   _AddShapeItem eArray, "Journals", "green", "1,4,7,6" 
-   _AddShapeItem eArray, "Ecosystem", "light blue", "1,7,7,9" 
-   
-   _AddShapeItem eArray, "Money", "orange", "7.5,1.5,8.5,2.5"
-   _AddPropToNamedItem eArray, "showname", "false", "Money"
-   -- _AddShapeItem eArray, "Money", "red", "7,1,9,3"
-   -- _AddPropToNamedItem eArray, "visible", "true", "Money"
-   
-   put "Journal Platform" into eName
-   _AddShapeItem eArray, eName, "dark green", "7.5,4.5,8.5,5.5"
-   _AddPropToNamedItem eArray, "showname", "false", eName
-   
-   put "Member Platform" into eName
-   _AddShapeItem eArray, eName, "dark blue", "7.5,7.5,8.5,8.5"
-   _AddPropToNamedItem eArray, "showname", "false", eName
-   
-   _AddShapeItem eArray, "Platform", "dark gray", "7,1,9,9", "black"
-   _AddPropToNamedItem eArray, "blendlevel", "0", "Platform"
-   _AddPropToNamedItem eArray, "linesize", "0", "Platform"
-   _AddPropToNamedItem eArray, "showname", "false", "Platform"
-   --
-   return eArray
-end block_Shape
-
-private function cool_Shape
-   local eArray
-   --   
-   _AddShapeItem eArray, "Guardians", "yellow", "1,1,7,3" 
-   _AddShapeItem eArray, "Journals", "green", "1,4,7,6" 
-   _AddShapeItem eArray, "Ecosystem", "light blue", "1,7,7,9" 
-   
-   _AddShapeItem eArray, "Money", "orange", "7.5,1.5,8.5,2.5", empty, "View|Button|SVG"
-   _AddPropToNamedItem eArray, "icon_Name", "money", "Money"
-   
-   _AddShapeItem eArray, "Journal Platform", "dark green", "7.5,4.5,8.5,5.5", empty, "View|Button|SVG"
-   _AddPropToNamedItem eArray, "icon_Name", "beaker", "Money"
-   
-   _AddShapeItem eArray, "Member Platform", "blue", "7.5,7.5,8.5,8.5", empty, "View|Button|SVG"
-   _AddPropToNamedItem eArray, "icon_Name", "sitemap", "Money"
-   
-   _AddShapeItem eArray, "Platform", "black", "7,3,9,9", "white"
-   _AddPropToNamedItem eArray, "blendlevel", "70", "Platform"
-   _AddPropToNamedItem eArray, "linesize", "0", "Platform"
-   --
-   put "8,1" into startPoint
-   put startPoint into tilePoints
-   put CR & "9,1|9,9|8,9" after tilePoints
-   put CR & "8,8.2|7,8.2|7,7.8|8,7.8" after tilePoints
-   put CR & "8,5.2|7,5.2|7,4.8|8,4.8" after tilePoints
-   put CR & "8,2.2|7,2.2|7,1.8|8,1.8" after tilePoints
-   put CR & startPoint after tilePoints
-   --
-   _AddPropToNamedItem eArray, "tile_Points", tilePoints, "Platform"
-   _AddPropToNamedItem eArray, "showname", "false", "Platform"
-   --
-   return eArray
-end cool_Shape
-
-private function bar_Shape
-   local eArray
-   --   
-   _AddShapeItem eArray, "Guardians", "yellow", "1,1,7,3" 
-   _AddShapeItem eArray, "Journals", "green", "1,4,7,6" 
-   _AddShapeItem eArray, "Ecosystem", "blue", "1,7,7,9" 
-   
-   _AddShapeItem eArray, "Money", "orange", "7,1,9,3", empty, "button"
-   _AddPropToNamedItem eArray, "showname", "false", "Money"
-   -- _AddPropToNamedItem eArray, "icon_Name", "money", "Money"
-   
-   _AddShapeItem eArray, "Platform", "black", "7,3,9,9", "white"
-   _AddPropToNamedItem eArray, "blendlevel", "70", "Platform"
-   _AddPropToNamedItem eArray, "linesize", "1", "Platform"
-   _AddPropToNamedItem eArray, "tile_Points", "8,3|9,3|9,9|8,9|8,8|7,8|8,8|8,5|7,5|8,5|8,3", "Platform"
-   _AddPropToNamedItem eArray, "showname", "false", "Platform"
-   --
-   return eArray
-end bar_Shape
-
-private function rightBar_Shape
-   local eArray
-   --   
-   _AddShapeItem eArray, "Money", "red", "7,1,9,3" 
-   _AddShapeItem eArray, "Guardians", "yellow", "1,1,6,3" 
-   _AddShapeItem eArray, "Journals", "green", "1,4,6,6" 
-   _AddShapeItem eArray, "Ecosystem", "blue", "1,7,6,9" 
-   _AddShapeItem eArray, "Platform", "gray"
-   --
-   _AddPropToNamedItem eArray, "tile_Points", "8,4|9,4|9,9|8,9|8,4", "Platform"
-   _AddPropToNamedItem eArray, "showname", "false", "Platform"
-   --
-   return eArray
-end rightBar_Shape
-
-private function vsm_Shape
-   local eArray
-   --   
-   _AddShapeItem eArray, "Guardians", "yellow", "1,1,7,3" 
-   _AddShapeItem eArray, "Journals", "green", "1,4,6,6" 
-   _AddShapeItem eArray, "Ecosystem", "light blue", "1,7,6,9" 
-   
-   _AddShapeItem eArray, "Money", "red", "7,1,9,3", empty, "View|Button|SVG"
-   _AddPropToNamedItem eArray, "icon_Name", "money", "Money"
-   
-   _AddShapeItem eArray, "Platform", "black", "7,4,9,9", "white"
-   _AddPropToNamedItem eArray, "tile_Points", "7,4|9,4|9,9|7,9|7,4", "Platform"
-   _AddPropToNamedItem eArray, "showname", "false", "Platform"
-   return eArray
-end vsm_Shape
-
-private command _AddPropToNamedItem @eArray, someProp, someValue, pItemName
-   put _FindItemNum (eArray, pItemName) into itemNum
-   put someValue into eArray [itemNum][someProp]
-end _AddPropToNamedItem
-
-private function _FindItemNum eArray, pItemName
-   if pItemName is empty then
-      return item 2 of the extents of eArray
-   else
-      repeat for each key testItemNum in eArray
-         if eArray [testItemNum]["name"] = pItemName then
-            return testItemNum
-         end if
-      end repeat
-   end if
-   return 0
-end _FindItemNum
-
-private command _AddShapeItem @eArray, someName, someColour, tileRect, pFontColour, pControlType
-   put someName into itemArray ["name"]
-   put 0 into itemArray ["linesize"]
-   put someColour into itemArray ["backgroundcolor"]
-   if tileRect is a rect then
-      put tileRect into itemArray ["tile_Rect"]
-   end if
-   if pFontColour is not empyt then
-      put pFontColour into itemArray ["foregroundcolor"]
-   end if
-   if pControlType is not empty then
-      put pControlType into itemArray ["control_Type"]
-   end if
-   --
-   array_AddToNumbered eArray, itemArray
-   put the result into lastItemNum
-   return lastItemNum
-end _AddShapeItem
 

@@ -16,9 +16,32 @@ end display_Params
 
 --> Global | Governance | Menu
 -
+on menu_GovernanceIcons
+   icon_LoadFamily "Governance", true
+end menu_GovernanceIcons
+
 on menu_Workspaces
    display_AsanaWorkspaces
 end menu_Workspaces
+
+on _
+end _
+
+on menu_HubspotContacts
+   display_HubContacts
+end menu_HubspotContacts
+
+on menu_HubspotCompanies
+   display_HubspotCompanies
+end menu_HubspotCompanies
+
+on _
+end _
+
+on menu_TestHubspotContact
+   display_Data hubspot_FetchContact(1)
+   display_Data hubspot_FetchContact(51)
+end menu_TestHubspotContact
 
 on _
 end _
@@ -57,9 +80,32 @@ on menu_AsanaApiHelp
    launch url "https://asana.com/developers/documentation/getting-started/errors"
 end menu_AsanaApiHelp
 
+on submenu_Dev
+   return "Dev | Menu"
+end submenu_Dev
 
---> Global | Governance | Menu | Props
--
 
---> Global | Governance | Menu | Disabled
+--> Dev | mmenu
 -
+on menu_TestHubspotCreateContact
+   put hubspot_ConstructCreateContactData ("David", "Bovill", "Thought Garden", "david@mediagarden.org", "(+44) 07490 196 595", "thought.garden") into postData
+   --
+   hubspot_CreateContact postData
+   put the result into resultArray
+   display_Data resultArray, "hubspot_CreateContact"
+end menu_TestHubspotCreateContact
+
+
+--> Deps
+-
+function hubspot_ConstructCreateContactData fName, lName, cName, uEmail, tNum, wSite
+   put cName into postData ["properties"]["company"]
+   put uEmail into postData ["properties"]["email"]
+   put fName into postData ["properties"]["firstname"]
+   put lName into postData ["properties"]["lastname"]
+   put tNum into postData ["properties"]["phone"]
+   put wSite into postData ["properties"]["website"]
+   --
+   return postData
+end hubspot_ConstructCreateContactData
+

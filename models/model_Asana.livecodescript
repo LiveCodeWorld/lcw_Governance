@@ -14,6 +14,11 @@ Will need to figure out alternative server / blockchain storage for our own purp
 
 --> Working on
 -
+command display_AsanaTemplateData
+   put asana_GetTemplateData() into aData
+   display_Data aData, "asana_GetTemplateData()", "display_AsanaTemplateData"
+end display_AsanaTemplateData
+
 function asana_GetTeamID teamName, workspaceIdOrName
    if workspaceIdOrName is a number then
       put workspaceIdOrName into workspaceID

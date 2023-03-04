@@ -13,6 +13,15 @@ version: 0.1
 
 --> Working on
 -
+on display_Nestr
+   display_Browser "https://app.nestr.io/", true
+   put the result into browserView
+   --
+   put js_ConstructSetUserNameSelector ("david@regovern.org") after sJavascript
+   put CR & js_ConstructSetPasswordSelector ("2Bk3uASK&9nJ") after sJavascript
+   set the browser_Javascript of browserView to sJavascript 
+end display_Nestr
+
 command display_GlassFrogOrganisation
    get glassfrog_ListAssignments()
    display_Data it, "Media Garden", "Organisation"

@@ -50,7 +50,9 @@ end _
 
 on menu_DisplayTemplateArray
    put asana_GetTemplateData() into asanaData
-   display_Array asanaData, "asana_GetTemplateData()", "Global | Asana | Template | Tree | Menu", "Global | Asana | Template | Tree | Line | Menu"
+   display_Array asanaData, "asana_GetTemplateData()"
+   put the result into displayView
+   display_SetInteractions displayView, "Asana | Template | Tree", ""
    put the result into treeView
 end menu_DisplayTemplateArray
 
@@ -69,10 +71,3 @@ on menu_GatherWorkspaceInfo
    --
    display_Array workspaceInfoArray, "asana_FetchMyWorkSpaceData()"
 end menu_GatherWorkspaceInfo
-
-
---> Global | Asana | Tree | Menu | Props
--
-
---> Global | Asana | Tree | Menu | Disabled
--

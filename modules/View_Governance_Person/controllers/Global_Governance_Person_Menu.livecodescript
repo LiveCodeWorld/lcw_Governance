@@ -1,19 +1,90 @@
-﻿script "Global_Governance_Person_Menu"
+﻿script "Global | Governance | Person | Menu"
 --> MetaData
 -
 license: GPLv3
-name: Global_Governance_Person_Menu
+name: Global | Governance | Person | Menu
 type: controller
 version: 0.1
 
-/*
-Was "Global | Image | Masked | Menu
-*/
+/*Was "Global | Image | Masked | Menu*/
+
+on _AllMyTasks
+   put asana_FetchMyWorkshopTaskArray() into myTaskArray
+   --
+   display_Array myTaskArray 
+end _AllMyTasks
+
+on _MyTasks indexView, workspaceName
+   put asana_FetchWorkSpaceID (workspaceName) into workspaceID
+   put asana_FetchUserTaskArray (workspaceID) into myTaskArray
+   --
+   display_Array myTaskArray 
+end _MyTasks
+
+on _UpdateMyWorkspaces
+   put asana_FetchWorkspaceNames() into LocalArray ["MyWorkspaces"]
+end _UpdateMyWorkspaces
+
+on _PersonTasks personView
+   put the displayed_Data of personView into asanaUserArray
+   put asanaUserArray ["gid"] into userID
+   
+   local myTaskArray
+   --
+   put asanaUserArray ["workspaces"] into userWorkspaceArray
+   repeat for each key indexNum in userWorkspaceArray
+      set the cursor to busy
+      put userWorkspaceArray [indexNum]["gid"] into workspaceID
+      --
+      asana_AddMyTaskArray myTaskArray, workspaceID, userID
+   end repeat
+   display_Array myTaskArray
+end _PersonTasks
+
+on _DisplayData personView
+   put the displayed_Data of personView into asanaUserArray
+   put asanaUserArray ["gid"] into userID
+   put asanaUserArray ["email"] into userEmail
+   put asanaUserArray ["photo"] into userPhotoArray
+   put asanaUserArray ["resourceType"] is "person" into isPerson
+   put asanaUserArray ["workspaces"] into userWorkspaceArray
+   --
+   put userID & CR & userEmail
+   display_Array userWorkspaceArray
+end _DisplayData
 
 
 --> Menu | Props
 -
 local LocalArray
+
+getprop menu_Target [tObject]
+   if LocalArray ["MyWorkspaces"] is empty then
+      put asana_FetchWorkspaceNames() into LocalArray ["MyWorkspaces"]
+   end if
+   put the person_View of tObject into pView
+   return pView
+end menu_Target
+
+getprop resizeGraphic_Param [mTarget]
+   if the long id of the target is not the long id of me then pass resizeGraphic_Param
+   put the resize_Graphic of mTarget into someBoolean
+   return someBoolean
+end resizeGraphic_Param
+
+getprop resizeGraphic_Params
+   return "true,false"
+end resizeGraphic_Params
+
+getprop constrainGraphic_Param [mTarget]
+   if the long id of the target is not the long id of me then pass constrainGraphic_Param
+   put the constrain_Graphic of mTarget into someBoolean
+   return someBoolean
+end constrainGraphic_Param
+
+getprop constrainGraphic_Params
+   return "true,false"
+end constrainGraphic_Params
 
 getprop personType_Param [mTarget]
    put the person_Type of mTarget into someType
@@ -51,41 +122,6 @@ getprop resizeQuality_Params
    return "normal,good,best"
 end resizeQuality_Params
 
-getprop show_Rounded [mTarget]
-   put the show_Rounded of mTarget into someBoolean
-   return someBoolean
-end show_Rounded
-
-getprop show_Image [mTarget]
-   if the long id of the target is not the long id of me then pass show_Image
-   put the show_Image of mTarget into someBoolean
-   return someBoolean
-end show_Image
-
-getprop show_Rounded [mTarget]
-   if the long id of the target is not the long id of me then pass show_Rounded
-   put the show_Rounded of mTarget into someBoolean
-   return someBoolean
-end show_Rounded
-
-getprop show_ImageBorder [mTarget]
-   if the long id of the target is not the long id of me then pass show_ImageBorder
-   put the show_ImageBorder of mTarget into someBoolean
-   return someBoolean
-end show_ImageBorder
-
-getprop resize_Graphic [mTarget]
-   if the long id of the target is not the long id of me then pass resize_Graphic
-   put the resize_Graphic of mTarget into someBoolean
-   return someBoolean
-end resize_Graphic
-
-getprop constrain_Graphic [mTarget]
-   if the long id of the target is not the long id of me then pass constrain_Graphic
-   put the constrain_Graphic of mTarget into someBoolean
-   return someBoolean
-end constrain_Graphic
-
 getprop disabled_ResizeQuality [mTarget]
    if the burnt_Image of mTarget is true then return true
    
@@ -119,59 +155,46 @@ getprop myTasks_Params
    return LocalArray ["MyWorkspaces"]
 end myTasks_Params
 
-on menu_Init
-   if LocalArray ["MyWorkspaces"] is empty then
-      put asana_FetchWorkspaceNames() into LocalArray ["MyWorkspaces"]
-   end if
-end menu_Init
+getprop checked_ShowImage [mTarget]
+   put the show_Image of mTarget into sBoolean
+   return sBoolean
+end checked_ShowImage
+
+getprop checked_ShowRounded [mTarget]
+   put the show_Rounded of mTarget into sBoolean
+   return sBoolean
+end checked_ShowRounded
+
+getprop checked_ShowImageBorder [mTarget]
+   put the show_ImageBorder of mTarget into sBoolean
+   return sBoolean
+end checked_ShowImageBorder
+
+getprop checked_Opaque [pView]
+   return the opaque of pView
+end checked_Opaque
 
 
 --> Global | Governance | Person | Menu
 -
-on menu_AllMyTasks
-   put asana_FetchMyWorkshopTaskArray() into myTaskArray
-   --
-   display_Array myTaskArray 
-end menu_AllMyTasks
+on menu_ShowRounded mTarget
+   put the show_Rounded of mTarget is false into sBoolean
+   set the show_Rounded of mTarget to sBoolean
+end menu_ShowRounded
 
-on menu_MyTasks indexView, workspaceName
-   put asana_FetchWorkSpaceID (workspaceName) into workspaceID
-   put asana_FetchUserTaskArray (workspaceID) into myTaskArray
-   --
-   display_Array myTaskArray 
-end menu_MyTasks
+on menu_ShowImage mTarget
+   put the show_Image of mTarget is false into sBoolean
+   set the show_Image of mTarget to sBoolean
+end menu_ShowImage
 
-on menu_UpdateMyWorkspaces
-   put asana_FetchWorkspaceNames() into LocalArray ["MyWorkspaces"]
-end menu_UpdateMyWorkspaces
+on menu_ShowImageBorder mTarget
+   put the show_ImageBorder of mTarget is false into sBoolean
+   set the show_ImageBorder of mTarget to sBoolean
+end menu_ShowImageBorder
 
-on menu_PersonTasks personView
-   put the displayed_Data of personView into asanaUserArray
-   put asanaUserArray ["gid"] into userID
-   
-   local myTaskArray
-   --
-   put asanaUserArray ["workspaces"] into userWorkspaceArray
-   repeat for each key indexNum in userWorkspaceArray
-      set the cursor to busy
-      put userWorkspaceArray [indexNum]["gid"] into workspaceID
-      --
-      asana_AddMyTaskArray myTaskArray, workspaceID, userID
-   end repeat
-   display_Array myTaskArray
-end menu_PersonTasks
-
-on menu_DisplayData personView
-   put the displayed_Data of personView into asanaUserArray
-   put asanaUserArray ["gid"] into userID
-   put asanaUserArray ["email"] into userEmail
-   put asanaUserArray ["photo"] into userPhotoArray
-   put asanaUserArray ["resourceType"] is "person" into isPerson
-   put asanaUserArray ["workspaces"] into userWorkspaceArray
-   --
-   put userID & CR & userEmail
-   display_Array userWorkspaceArray
-end menu_DisplayData
+on menu_Opaque pView
+   set the opaque of pView to not the opaque of pView
+end menu_Opaque
 
 on _
 end _
@@ -179,9 +202,6 @@ end _
 on menu_PersonType mTarget, someType
    set the person_Type of mTarget to someType
 end menu_PersonType
-
-on _
-end _
 
 on menu_BurnImage mTarget
    set the burnt_Image of mTarget to true
@@ -200,9 +220,6 @@ on menu_SizeImage mTarget, someSize
    end if
    set the image_Magnification of mTarget to someMag
 end menu_SizeImage
-
-on _
-end _
 
 on menu_ChooseImage mTarget, chooseHow
    switch chooseHow
@@ -226,35 +243,9 @@ on menu_ChooseImage mTarget, chooseHow
    end switch
 end menu_ChooseImage
 
-on _
-end _
-
-on menu_ShowRounded mTarget, someBoolean
-   set the show_Rounded of mTarget to someBoolean
-end menu_ShowRounded
-
-on menu_ShowImage mTarget, someBoolean
-   set the show_Image of mTarget to someBoolean
-end menu_ShowImage
-
-on menu_ShowImageBorder mTarget, someBoolean
-   set the show_ImageBorder of mTarget to someBoolean
-end menu_ShowImageBorder
-
-on _
-end _
-
-on menu_ResizeGraphic mTarget, someBoolean
-   set the resize_Graphic of mTarget to someBoolean
-end menu_ResizeGraphic
-
 on menu_ResizeQuality mTarget, someQuality
    set the image_ResizeQuality of mTarget to someQuality
 end menu_ResizeQuality
-
-on menu_ConstrainGraphic mTarget, someBoolean
-   set the constrain_Graphic of mTarget to someBoolean
-end menu_ConstrainGraphic
 
 on _
 end _
@@ -263,10 +254,6 @@ on submenu_Image
    return "Global | Image | Menu"
 end submenu_Image
 
-
-on _
-end _
-
 on submenu_Dev
    return "Dev | Menu"
 end submenu_Dev
@@ -274,6 +261,14 @@ end submenu_Dev
 
 --> Dev | Menu
 -
+on menu_ResizeGraphic mTarget, someBoolean
+   set the resize_Graphic of mTarget to someBoolean
+end menu_ResizeGraphic
+
+on menu_ConstrainGraphic mTarget, someBoolean
+   set the constrain_Graphic of mTarget to someBoolean
+end menu_ConstrainGraphic
+
 on menu_ShowRounded mTarget, someBoolean
    set the show_Rounded of mTarget to someBoolean
 end menu_ShowRounded
