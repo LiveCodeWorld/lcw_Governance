@@ -8,9 +8,29 @@ type: behavior
 version: 0.1
 
 /*
-These handlers are for crating new llayouts for the goverenance view.
+These handlers are for creating new layouts for the goverenance view.
 They are removed here as authoring tools that have a lot of dependencies.
 These handlers are not requird to use the module once it has been created.
+
+function tile_GetSquare tLeft, tBottom, tRight, tTop, squareRect, pTilesAcross
+   if pTilesAcross is empty then put 10 into pTilesAcross
+   --
+   put item 1 of squareRect into startX
+   put item 2 of squareRect into startY
+   put (item 3 of squareRect - startX) / pTilesAcross into tileWidth
+   
+   put item 1 of tileRect into tLeft
+   put item 2 of tileRect into tBottom
+   put grid_GetLoc (tLeft, tBottom, startX, startY, tileWidth) into sRect
+   
+   put item 3 of tileRect into tRight
+   put item 4 of tileRect into tTop
+   put grid_GetLoc (tRight, tTop, startX, startY, tileWidth) into item 3 of sRect
+   
+   -- put grid_GetRect (tLeft, tBottom, tRight, tTop, startX, startY, tileWidth) into sRect
+   --
+   return sRect
+end tile_GetSquare
 */
 
 local LocalArray
@@ -18,21 +38,41 @@ local LocalArray
 
 --> Working On
 -
+function tile_GetAcross
+   return 10
+   --
+   put LocalArray ["tiles_Across"] into tilesAcross
+   return tilesAcross
+end tile_GetAcross
+
+private command _SetProps someControl, cPropArray
+   repeat for each key propName in cPropArray
+      if the number of words of propName > 1 then
+         next repeat -- "id"
+      end if
+      --
+      put cPropArray [propName] into propValue
+      set the propName of someControl to propValue
+   end repeat
+end _SetProps
+
 setprop element_Array [tilesAcross] eArray
    lock screen
-   put _AllElementViews() into allIDs
+   put the element_Views of me into allIDs
    repeat for each key itemNum in eArray 
       put eArray [itemNum] into cPropArray
       --
       put _ControlFromArray (cPropArray) into someControl
       if exists (someControl) is false then
-         -- this authoring bit has a lot of deps
-         put _ControlFromArray (cPropArray) into someControl
+         _CreateControlFromArray cPropArray, tilesAcross
+         put the result into someControl
+         --
+         _SetProps someControl, cPropArray
          next repeat
       end if
       --
       put the short id of someControl into usedID
-      put usedID into eArray [itemNum]["element id"]
+      put usedID into eArray [itemNum]["id"]
       put lineoffset (usedID, allIDs) into lineNum
       delete line lineNum of allIDs 
       --
@@ -44,14 +84,7 @@ setprop element_Array [tilesAcross] eArray
          delete variable cPropArray ["control_Type"]
       end if
       --
-      repeat for each key propName in cPropArray
-         if the number of words of propName > 1 then
-            next repeat -- "element id"
-         end if
-         
-         put cPropArray [propName] into propValue
-         set the propName of someControl to propValue
-      end repeat
+      _SetProps someControl, cPropArray
       -- _AutoSetShowName someControl
    end repeat
    --
@@ -64,6 +97,44 @@ setprop element_Array [tilesAcross] eArray
    unlock screen
    return eArray
 end element_Array
+
+
+--> Create
+-
+private command _CreateControlFromArray cPropArray, pTilesAcross
+   put cPropArray ["name"] into someName
+   put cPropArray ["backgroundcolor"] into someColour
+   put cPropArray ["tile_Rect"] into tileRect
+   put cPropArray ["control_Type"] into cType
+   --
+   put the square_Rect of me into squareRect
+   put tile_GetRect (tileRect, squareRect, pTilesAcross) into eRect
+   --
+   _CreateControlObject someName, eRect, someColour, cType
+   put the result into someControl
+   return someControl
+end _CreateControlFromArray
+
+private command _CreateControlObject someName, eRect, someColour, cType
+   lock screen
+   put the short id of me into groupID
+   create_Placeholder someName, eRect, groupID, someColour
+   put the result into someControl
+   -- 
+   if cType is not empty then
+      set the control_Type of someControl to cType
+      put the result into someControl
+   else
+      set the showname of someControl to false
+      set the showborder of someControl to false
+   end if
+   unlock screen
+   return someControl
+end _CreateControlObject
+
+
+--> Props
+-
 
 setprop tiles_Across tilesAcross
    put tilesAcross ^ 2 into gridNum
@@ -97,7 +168,7 @@ getprop grid_Array
       repeat tilesAcross
          add 1 to y
          --
-         put grid_GetLoc (x, y, tileWidth, startX, startY) into someLoc
+         put grid_GetLoc (x, y, startX, startY, tileWidth) into someLoc
          put someLoc into gridArray [x,y]
       end repeat
    end repeat
@@ -109,8 +180,7 @@ getprop grid_RectArray
    put the grid_Num of me into gridNum
    
    put the square_Rect of me into squareRect
-   
-   -- here we seem to tweak the square rect ???
+   put item 3 of squareRect - item 1 of squareRect into squareWidth
    put gridNum ^ 0.5 into rowNum
    put squareWidth/rowNum into nWidth
    
@@ -170,7 +240,7 @@ private function _GetGridControl gridNum
 end _GetGridControl
 
 private function _ControlFromArray cPropArray
-   put cPropArray ["element id"] into elementID  
+   put cPropArray ["id"] into elementID  
    if exists (control id elementID of me) is true then
       put the long id of control id elementID into cObject
       return cObject
@@ -180,23 +250,6 @@ private function _ControlFromArray cPropArray
    put the top_Control [elementName] of me into cObject
    return cObject
 end _ControlFromArray
-
-private command _CreateControlObject someName, eRect, someColour, cType
-   lock screen
-   put the short id of me into groupID
-   create_Placeholder someName, eRect, groupID, someColour
-   put the result into someControl
-   -- 
-   if cType is not empty then
-      set the control_Type of someControl to cType
-      put the result into someControl
-   else
-      set the showname of someControl to false
-      set the showborder of someControl to false
-   end if
-   unlock screen
-   return someControl
-end _CreateControlObject
 
 private function _GetControlObject someName, eRect, someColour
    -- don't create if a control of that name already exists
@@ -209,28 +262,14 @@ private function _GetControlObject someName, eRect, someColour
    return someControl
 end _GetControlObject
 
-private command _CreateControlFromArray cPropArray, pTilesAcross
-   put cPropArray ["name"] into someName
-   put cPropArray ["backgroundcolor"] into someColour
-   put cPropArray ["tile_Rect"] into tileRect
-   put cPropArray ["control_Type"] into cType
-   --
-   put the square_Rect of me into squareRect
-   put tile_GetRect (tileRect, squareRect, pTilesAcross) into eRect
-   --
-   _CreateControlObject someName, eRect, someColour, cType
-   put the result into someControl
-   return someControl
-end _CreateControlFromArray
-
 private command _SetGridNum gridNum
-   lock screen
+   put the element_Views of me into childIDs
    --
+   lock screen
    put gridNum ^ 0.5 into tilesAcross
    if tilesAcross is not an integer then return empty
    
    put tilesAcross into LocalArray ["tiles_Across"]
-   put _AllElementViews() into childIDs
    put the number of lines of childIDs into oldGridNum -- more robust
    
    put the rect of me into oRect

@@ -210,8 +210,11 @@ on mouseDown pButtonNumber
          menu_PopUp "Global | IxOS | Slice | Menu"
          break
       default
-         grab me
-         pass mouseDown
+         if the shiftKey is "Down" then
+            grab me
+         else
+            pass mouseDown
+         end if
    end switch
 end mouseDown
 

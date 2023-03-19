@@ -10,6 +10,74 @@ version: 0.2
 
 --> Working on
 -
+private function _FromView fromName
+   put the from_Object of me into fromObject
+   if exists (fromObject) then return fromObject
+   
+   # Legacy Code
+   if exists (group fromName) then
+      return the long id of group fromName
+   else
+      return empty
+   end if
+end _FromView
+
+private function _ToView toName
+   put the to_Object of me into toObject
+   if exists (toObject) then return toObject
+   
+   # Legacy Code
+   if exists (group toName) then
+      return the long id of group toName
+   else
+      return empty
+   end if
+end _ToView
+
+getprop from_Object
+   return the arrow_Array ["from_Object"] of me
+end from_Object
+
+setprop from_Object fromObject
+   if exists (fromObject) is false then return empty
+   
+   put the rugged_ID of fromObject into rObject
+   set the arrow_Array ["from_Object"] of me to rObject
+   --
+   put the short name of fromObject into fromName
+   set the from_Name of me to fromName
+end from_Object
+
+getprop to_Object
+   return the arrow_Array ["to_Object"] of me
+end to_Object
+
+setprop to_Object toObject
+   if exists (toObject) is false then return empty
+   
+   put the rugged_ID of toObject into rObject
+   set the arrow_Array ["to_Object"] of me to rObject
+   --
+   put the short name of toObject into toName
+   set the to_Name of me to toName
+end to_Object
+
+getprop from_Name
+   return the arrow_Array ["from_Name"] of me
+end from_Name
+
+setprop from_Name fromName
+   set the arrow_Array ["from_Name"] of me to fromName
+end from_Name
+
+getprop to_Name
+   return the arrow_Array ["to_Name"] of me
+end to_Name
+
+setprop to_Name toName
+   set the arrow_Array ["to_Name"] of me to toName
+end to_Name
+
 
 --> Events
 -
@@ -64,7 +132,7 @@ end resizeControl
 command LayoutControl pRect
    if pRect is empty then put the rect of me into pRect
    --
-   set the rect of me to pRect
+   -- set the rect of me to pRect
    --
    put the arrow_Data of me into arrowData
    set the arrow_PointLink of me to arrowData
@@ -183,14 +251,6 @@ setprop from_SliceNum sliceNum
    set the arrow_Array ["from_SliceNum"] of me to sliceNum
 end from_SliceNum
 
-getprop from_Name
-   return the arrow_Array ["from_Name"] of me
-end from_Name
-
-setprop from_Name fromName
-   set the arrow_Array ["from_Name"] of me to fromName
-end from_Name
-
 
 --> Props | To
 -
@@ -221,14 +281,6 @@ end to_SliceNum
 setprop to_SliceNum sliceNum
    set the arrow_Array ["to_SliceNum"] of me to sliceNum
 end to_SliceNum
-
-getprop to_Name
-   return the arrow_Array ["to_Name"] of me
-end to_Name
-
-setprop to_Name toName
-   set the arrow_Array ["to_Name"] of me to toName
-end to_Name
 
 
 --> Private
@@ -361,27 +413,6 @@ end _NormaliseItems
 
 --> Objects
 -
-private function _ToView toName
-   if exists (group toName) then
-      return the long id of group toName
-   else
-      return empty
-   end if
-end _ToView
-
-private function _FromView fromName
-   if exists (group fromName) then
-      return the long id of group fromName
-   else
-      return empty
-   end if
-end _FromView
-
--- getprop menu_Button
-put menu_GetGlobalButton() into mButton
-return mButton
-end menu_Button
-
 getprop arrow_View
    return the long id of me
 end arrow_View

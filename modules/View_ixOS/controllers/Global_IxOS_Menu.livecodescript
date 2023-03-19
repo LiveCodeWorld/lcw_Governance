@@ -84,9 +84,6 @@ on menu_Rename ixView
    set the name of newName to newName
 end menu_Rename
 
-on menu_NameLinked ixView
-end menu_NameLinked
-
 private on __
 end __
 
@@ -100,12 +97,6 @@ on menu_ShowButton ixView
    set the show_Button of ixView to (sBoolean is false)
 end menu_ShowButton
 
-on menu_SetMargin ixView
-   put the inner_Margin of ixView into iMargin
-   put lcw_Ask("Set the inner_Margin...", iMargin, "inner_Margin", ixView) into iMargin
-   set the inner_Margin of ixView to iMargin
-end menu_SetMargin
-
 private on ___
 end ___
 
@@ -117,15 +108,15 @@ on submenu_DisplayChart
    return "Global | IxOS | Chart | Display | Menu"
 end submenu_DisplayChart
 
-on submenu_CreateChart
+on submenu_LinkChart
    return "Global | IxOS | Chart | Create | Menu"
-end submenu_CreateChart
+end submenu_LinkChart
 
 getprop checked_NameLinked [ixView]
    put the name_Linked of ixView into sBoolean
    return sBoolean is true
 end checked_NameLinked
-   
+
 private on ____
 end ____
 
@@ -139,6 +130,27 @@ on menu_SetIncome ixView
    --
    display_Data vData, "vData", pModelName
 end menu_SetIncome
+
+on menu_MouseUpCommand ixView
+   put the mouse_Up of ixView into mUp
+   put lcw_Ask ("Set the mouse-up command...", mUp, "display_Description") into mUp
+   set the mouse_Up of ixView to mUp
+end menu_MouseUpCommand
+
+on menu_MouseDoubleUpCommand ixView
+   put the mouse_DoubleUp of ixView into mDoubleUp
+   put lcw_Ask ("Set the double-click command...", mDoubleUp, "display_Description") into mDoubleUp
+   set the mouse_DoubleUp of ixView to mDoubleUp
+end menu_MouseDoubleUpCommand
+
+on menu_SetMargin ixView
+   put the inner_Margin of ixView into iMargin
+   put lcw_Ask("Set the inner_Margin...", iMargin, "inner_Margin", ixView) into iMargin
+   set the inner_Margin of ixView to iMargin
+end menu_SetMargin
+
+private command _____
+end _____
 
 on menu_SaveData ixView
    dispatch "save_Data" to ixView
@@ -157,8 +169,8 @@ on submenu_ModuleData
    return "Global | Module | Model | Menu"
 end submenu_ModuleData
 
-private on _____
-end _____
+private on ______
+end ______
 
 on submenu_Test
    return "Global | IxOS | Test | Menu"

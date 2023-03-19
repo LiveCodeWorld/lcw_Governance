@@ -11,10 +11,174 @@ version: 0.1
 -
 local LocalArray
 
+getprop local_Array
+   return LocalArray
+end local_Array
+
+
+--> Working on
+
+function tile_GetRect tileRect, frameRect, tilesAcross, pTilesDown
+   if pTilesDown is empty then put tilesAcross into pTilesDown
+   
+   put item 1 of frameRect into startX
+   put item 2 of frameRect into startY
+   put (item 3 of frameRect - startX) / tilesAcross into tileWidth
+   
+   put item 1 of tileRect into tLeft
+   put item 2 of tileRect into tBottom
+   put item 3 of tileRect into tRight
+   put item 4 of tileRect into tTop
+   
+   put grid_GetLoc (tLeft, tBottom, startX, startY, tileWidth) into eRect
+   put grid_GetLoc (tRight, tTop, startX, startY, tileWidth) into item 3 of eRect
+   --
+   return eRect
+end tile_GetRect
+
+-- function tile_GetRect tileRect, frameRect, tilesAcross, pTilesDown
+   -- has been updated?
+   if pTilesDown is empty then put tilesAcross into pTilesDown
+   put item 1 of frameRect into startX
+   put item 2 of frameRect into startY
+   
+   put (item 3 of frameRect - startX) / pTilesAcross into tileWidth
+   
+   put item 1 of tileRect into tLeft
+   put item 2 of tileRect into tBottom
+   put grid_GetLoc (tLeft, tBottom, startX, startY, tileWidth, tileHeight) into sRect
+   
+   put item 3 of tileRect into tRight
+   put item 4 of tileRect into tTop
+   put grid_GetLoc (tRight, tTop, startX, startY, tileWidth, tileHeight) into item 3 of sRect
+   --
+   return sRect
+end tile_GetRect
+
+function tile_GetAcross
+   return 10
+   --
+   put LocalArray ["tiles_Across"] into tilesAcross
+   return tilesAcross
+end tile_GetAcross
+
+getprop show_Names
+   return LocalArray ["show_Names"] is true
+end show_Names
+
+setprop show_Names someBoolean
+   put someBoolean is true into someBoolean
+   put someBoolean into LocalArray ["show_Names"]
+   put _NamedViews() into buttonViews
+   --
+   lock screen
+   repeat for each line someControl in buttonViews
+      if exists (someControl) then
+         set the showname of someControl to someBoolean
+      end if
+   end repeat
+   unlock screen
+end show_Names
+
+getprop all_Visible
+   return _CheckAllVisible()
+end all_Visible
+
+command _AutoSetShowNames
+   put _CheckAllVisible() into someBoolean
+   set the show_Names of me to someBoolean
+end _AutoSetShowNames
+
+function _CheckAllVisible
+   put _NamedViews() into buttonViews
+   repeat for each line someControl in buttonViews
+      if exists (someControl) is false then next repeat
+      --
+      put _CheckShowName (someControl) into someBoolean
+      if someBoolean is false then
+         return false 
+      end if
+   end repeat
+   return true
+end _CheckAllVisible
+
+private function _NamedViews
+   if exists (control "Guardians" of me) then
+      put the long id of control "Guardians" of me & CR after threeTitleViews
+   end if
+   --
+   if exists (control "Journals" of me) then
+      put the long id of control "Journals" of me & CR after threeTitleViews
+   end if
+   --
+   if exists (control "Ecosystem" of me) then
+      put the long id of control "Ecosystem" of me after threeTitleViews
+   end if
+   delete char -1 of threeTitleViews
+   return threeTitleViews
+end _NamedViews
+
+
+--> Objects | All Views
+-
+getprop element_Views
+   return _ElementViews()
+end element_Views
+
+private function _ButtonViews
+   put _ElementViews() into allElementViews
+   repeat for each line childID in allElementViews
+      put the long id of control id childID into someControl
+      switch word 1 of someControl
+         case "graphic"
+            next repeat
+         default
+            put someControl & CR after buttonViews
+      end switch
+   end repeat
+   delete char -1 of buttonViews
+   return buttonViews
+end _ButtonViews
+
+function _ElementViews
+   put the childControlIDs of me into allIDs
+   put _btnView() into btnView
+   put the short id of btnView into btnID
+   put lineoffset (btnID, allIDs) into lineNum
+   delete line lineNum of allIDs 
+   return allIDs
+end _ElementViews
+
+private function _ControlFromArray cPropArray
+   put cPropArray ["id"] into elementID  
+   if exists (control id elementID of me) is true then
+      put the long id of control id elementID into cObject
+      return cObject
+   end if
+   
+   put cPropArray ["name"] into elementName
+   put the top_Control [elementName] of me into cObject
+   return cObject
+end _ControlFromArray
+
+
+--> Events
+-
+on preOpenControl
+   init_LocalArray
+   LayoutControl
+end preOpenControl
+
+on resizeControl
+   put the rect of me into pRect
+   LayoutControl pRect
+end resizeControl
+
 
 --> Init
 -
 command init_LocalArray pArray
+   delete variable LocalArray
    if pArray is an array then
       put pArray into LocalArray ["eArray"]
       -- set the uLCW ["eArray"] of me to eArray
@@ -22,13 +186,8 @@ command init_LocalArray pArray
       put the uLCW ["eArray"] of me into LocalArray ["eArray"]
    end if
    --
-   -- put _DefaultTilesAcross() into tilesAcross
-   put 10 into tilesAcross
-   put tilesAcross into LocalArray ["tiles_Across"]
+   put 10 into LocalArray ["tiles_Across"]
    put true into LocalArray ["fixed_Square"]
-   -- put true into LocalArray ["show_Names"]
-   -- put true into LocalArray ["button_View"]
-   -- put false into LocalArray ["show_Borders"]
 end init_LocalArray
 
 
@@ -42,32 +201,6 @@ getprop element_Array
    return eArray
 end element_Array
 
-getprop tile_Rect
-   put tile_GetRect (tileRect, squareRect, pTilesAcross)
-   
-end tile_Rect
-
-
---> Working on | Geometry
--
-function tile_GetRect tileRect, frameRect, tilesAcross, pTilesDown
-   if pTilesDown is empty then put tilesAcross into pTilesDown
-   
-   put item 1 of frameRect into startX
-   put item 2 of frameRect into startY
-   put (item 3 of frameRect - startX) / tilesAcross into tileWidth
-   
-   put item 1 of tileRect into tLeft
-   put item 2 of tileRect into tBottom
-   put item 3 of tileRect into tRight
-   put item 4 of tileRect into tTop
-   
-   put grid_GetLoc (tLeft, tBottom, tileWidth, startX, startY) into eRect
-   put grid_GetLoc (tRight, tTop, tileWidth, startX, startY) into item 3 of eRect
-   --
-   return eRect
-end tile_GetRect
-
 
 --> Geometry
 -
@@ -76,10 +209,6 @@ getprop square_Rect [sMargin]
    put rect_GetSquare (someRect, sMargin) into squareRect
    return squareRect
 end square_Rect
-
-getprop local_Array
-   return LocalArray
-end local_Array
 
 setprop grow_Rect gFactor
    put the rect_Grow [gFactor] of the target into grownRect
@@ -135,22 +264,6 @@ setprop fixed_Square someBoolean
    LayoutControl
 end fixed_Square
 
-getprop show_Names
-   return LocalArray ["show_Names"] is true
-end show_Names
-
-setprop show_Names someBoolean
-   put someBoolean is true into someBoolean
-   put someBoolean into LocalArray ["show_Names"]
-   put _threeTitleViews() into buttonViews
-   --
-   lock screen
-   repeat for each line someControl in buttonViews
-      set the showname of someControl to someBoolean
-   end repeat
-   unlock screen
-end show_Names
-
 getprop show_Borders
    return LocalArray ["show_Borders"] is true
 end show_Borders
@@ -158,13 +271,28 @@ end show_Borders
 setprop show_Borders someBoolean
    put someBoolean is true into someBoolean
    put someBoolean into LocalArray ["show_Borders"]
-   put _AllElementViews() into allIDs
+   put _ElementViews() into allIDs
    lock screen
    repeat for each line childID in allIDs
       set the showborder of control id childID of me to someBoolean
    end repeat
    unlock screen
 end show_Borders
+
+setprop tile_Rect [tilesAcross] tileRect
+   put the long id of the target into tObject
+   if word 1 of tObject is not "graphic" then
+      return empty
+   end if
+   
+   put the square_Rect of me into squareRect
+   put tile_GetRect (tileRect, squareRect, tilesAcross) into someRect
+   lock screen
+   set the style of the target to rectangle
+   set the rect of the target to someRect
+   unlock screen
+   return someRect
+end tile_Rect
 
 getprop group_InnerRect [rectBounds]
    put the long id of the target into targetGroup
@@ -194,18 +322,8 @@ setprop grid_OuterMargin someMargins
 end grid_OuterMargin
 
 
---> Events
+--> Layout
 -
-on preOpenControl
-   init_LocalArray
-   LayoutControl
-end preOpenControl
-
-on resizeControl
-   put the rect of me into pRect
-   LayoutControl pRect
-end resizeControl
-
 on LayoutControl pRect
    lock screen
    local squareRect, squareCentre, squareWidth, halfSquareWidth, pSquareMargin
@@ -237,8 +355,12 @@ on LayoutControl pRect
       switch
          case tilePoints is not empty
             -- set the tile_Points of someControl to tilePoints
-            put tile_GetPoints (tilePoints, squareRect, tilesAcross) into newPoints
-            set the points of someControl to newPoints
+            if word 1 of the long id of someControl = "graphic" then
+               put tile_GetPoints (tilePoints, squareRect, tilesAcross) into newPoints
+               set the points of someControl to newPoints
+            else
+               breakpoint
+            end if
             break
          case tileRect is a rectangle -- quick check
             put tile_GetRect (tileRect, squareRect, tilesAcross) into childRect
@@ -276,8 +398,63 @@ function _DefaultTilesAcross
    return tilesAcross
 end _DefaultTilesAcross
 
+function _NoGraphicsVisible
+   put the childControlIDs of me into allIDs
+   repeat for each line cID in allIDs
+      put the long id of control id cID of me into someControl
+      put _CheckShowName (someControl) into someBoolean
+      if someBoolean is false then
+         return false 
+      end if
+   end repeat
+   return true
+end _NoGraphicsVisible
 
---> Working on
+private function _CheckShowName someControl
+   try
+      put the width of someControl into eWidth
+      put the formattedwidth of someControl into fWidth
+      add 8 to fWidth
+      put eWidth > fWidth into someBoolean
+   catch e
+      -- bug: when trying to get formattedwidth of a graphic
+      put true into someBoolean
+   end try
+   return someBoolean
+end _CheckShowName
+
+command _AutoSetShowName someControl
+   put _CheckShowName (someControl) into someBoolean
+   set the showname of someControl to someBoolean
+end _AutoSetShowName
+
+private function _InnerRect
+   put the long id of the target into someGroup
+   put the rect of someGroup into groupRect
+   
+   if word 1 of someGroup is not "group" then return groupRect
+   put the margins of someGroup into someMargin
+   put the scrollbarwidth of someGroup into scrollBarMargin
+   if the vscrollbar of someGroup is true then subtract scrollBarMargin from item 3 of groupRect
+   if the hscrollbar of someGroup is true then subtract scrollBarMargin from item 4 of groupRect
+   
+   if the showborder of someGroup is true then
+      put the borderwidth of someGroup into bWidth
+      
+      if the showname of someGroup is true then
+         put the effective textheight of someGroup - bWidth - 1 into someBit
+         add someBit to item 2 of someMargin
+      end if
+      
+      rect_SubtractMargins groupRect, bWidth
+   end if
+   
+   rect_SubtractMargins groupRect, someMargin
+   return groupRect
+end _InnerRect
+
+
+--> Objects
 -
 getprop top_Control [topName]
    put the long id of the target into targetObject
@@ -302,85 +479,8 @@ getprop top_Control [topName]
    return empty
 end top_Control
 
-private function _ControlFromArray cPropArray
-   put cPropArray ["element id"] into elementID  
-   if exists (control id elementID of me) is true then
-      put the long id of control id elementID into cObject
-      return cObject
-   end if
-   
-   put cPropArray ["name"] into elementName
-   put the top_Control [elementName] of me into cObject
-   return cObject
-end _ControlFromArray
 
-setprop tile_Rect [tilesAcross] tileRect
-   put the long id of the target into tObject
-   if word 1 of tObject is not "graphic" then
-      return empty
-   end if
-   
-   put the square_Rect of me into squareRect
-   put tile_GetRect (tileRect, squareRect, tilesAcross) into someRect
-   lock screen
-   set the style of the target to rectangle
-   set the rect of the target to someRect
-   unlock screen
-   return someRect
-end tile_Rect
-
-command _AutoSetShowNames
-   put _CheckAllVisible() into someBoolean
-   set the show_Names of me to someBoolean
-end _AutoSetShowNames
-
-getprop all_Visible
-   return _CheckAllVisible()
-end all_Visible
-
-function _NoGraphicsVisible
-   put the childControlIDs of me into allIDs
-   repeat for each line cID in allIDs
-      put the long id of control id cID of me into someControl
-      put _CheckShowName (someControl) into someBoolean
-      if someBoolean is false then
-         return false 
-      end if
-   end repeat
-   return true
-end _NoGraphicsVisible
-
-function _CheckAllVisible
-   put _threeTitleViews() into buttonViews
-   repeat for each line someControl in buttonViews
-      put _CheckShowName (someControl) into someBoolean
-      if someBoolean is false then
-         return false 
-      end if
-   end repeat
-   return true
-end _CheckAllVisible
-
-private function _CheckShowName someControl
-   try
-      put the width of someControl into eWidth
-      put the formattedwidth of someControl into fWidth
-      add 8 to fWidth
-      put eWidth > fWidth into someBoolean
-   catch e
-      -- bug: when trying to get formattedwidth of a graphic
-      put true into someBoolean
-   end try
-   return someBoolean
-end _CheckShowName
-
-command _AutoSetShowName someControl
-   put _CheckShowName (someControl) into someBoolean
-   set the showname of someControl to someBoolean
-end _AutoSetShowName
-
-
---> Button View
+--> Objects | Button View
 -
 getprop button_View
    put _btnView() into btnView
@@ -414,42 +514,12 @@ function _btnView
 end _btnView
 
 
---> All Views
+--> Objects
 -
-function _threeTitleViews
-   put the long id of control "Guardians" of me into threeTitleViews
-   put CR & the long id of control "Journals" of me after threeTitleViews
-   put CR & the long id of control "Ecosystem" of me after threeTitleViews
-   return threeTitleViews
-end _threeTitleViews
+getprop org_View
+   return the long id of me
+end org_View
 
-function _AllButtonViews
-   put _AllElementViews() into allElementViews
-   repeat for each line childID in allElementViews
-      put the long id of control id childID into someControl
-      switch word 1 of someControl
-         case "graphic"
-            next repeat
-         default
-            put someControl & CR after buttonViews
-      end switch
-   end repeat
-   delete char -1 of buttonViews
-   return buttonViews
-end _AllButtonViews
-
-function _AllElementViews
-   put the childControlIDs of me into allIDs
-   put _btnView() into btnView
-   put the short id of btnView into btnID
-   put lineoffset (btnID, allIDs) into lineNum
-   delete line lineNum of allIDs 
-   return allIDs
-end _AllElementViews
-
-
---> Controls
--
 getprop grid_View
    return the long id of me
 end grid_View
@@ -463,29 +533,122 @@ getprop view_Object
 end view_Object
 
 
---> Private
+--> Deps
 -
-private function _InnerRect
-   put the long id of the target into someGroup
-   put the rect of someGroup into groupRect
+function rect_GetSquare someRect, pSquareMargin
+   local squareRect, squareCentre, squareWidth, halfSquareWidth
+   rect_SetSquare someRect, squareRect, squareCentre, squareWidth, halfSquareWidth, pSquareMargin
+   return squareRect
+end rect_GetSquare
+
+command rect_SetSquare pRect, @squareRect, @squareCentre, @squareWidth, @halfSquareWidth, pSquareMargin
+   put item 3 of pRect - item 1 of pRect into someX
+   put item 4 of pRect - item 2 of pRect into someY
    
-   if word 1 of someGroup is not "group" then return groupRect
-   put the margins of someGroup into someMargin
-   put the scrollbarwidth of someGroup into scrollBarMargin
-   if the vscrollbar of someGroup is true then subtract scrollBarMargin from item 3 of groupRect
-   if the hscrollbar of someGroup is true then subtract scrollBarMargin from item 4 of groupRect
+   put min (someX, someY) into squareWidth
+   put squareWidth / 2 into halfSquareWidth
+   put 2 * halfSquareWidth into squareWidth
    
-   if the showborder of someGroup is true then
-      put the borderwidth of someGroup into bWidth
+   put rect_GetCentre (pRect) into squareCentre
+   put rect_LocWidthHeight (squareCentre, squareWidth, squareWidth) into squareRect
+   
+   rect_SubtractMargins squareRect, pSquareMargin
+   return squareRect
+end rect_SetSquare
+
+--- function rect_GetSquare sRect
+put item 1 of sRect into sLeft
+put item 2 of sRect into sTop
+put item 3 of sRect into sRight
+put item 4 of sRect into sBottom
+
+put (sLeft + sRight) / 2 into sCenterX
+put (sTop + sBottom) / 2 into sCenterY
+put min (sRight - sLeft, sBottom - sTop) / 2 into sSize
+
+put sCenterX - sSize into sNewLeft
+put sCenterY - sSize into sNewTop
+put sCenterX + sSize into sNewRight
+put sCenterY + sSize into sNewBottom
+--
+return sNewLeft & "," & sNewTop & "," & sNewRight & "," & sNewBottom
+end rect_GetSquare
+
+command rect_SubtractMargins @someRect, pMargin
+   margin_Normalize pMargin, leftM, topM, rightM, bottomM   
+   add leftM to item 1 of someRect
+   add topM to item 2 of someRect
+   subtract rightM from item 3 of someRect
+   subtract bottomM from item 4 of someRect
+end rect_SubtractMargins
+
+command margin_Normalize @someMargin, @leftM, @topM, @rightM, @bottomM
+   -- fixed bug in setting bottomM when 4th item is empty
+   if the number of items of someMargin < 4 then
+      put item 1 of someMargin into defaultMargin
+      put defaultMargin into leftM
       
-      if the showname of someGroup is true then
-         put the effective textheight of someGroup - bWidth - 1 into someBit
-         add someBit to item 2 of someMargin
+      put item 2 of someMargin into actualMargin
+      if actualMargin is empty then
+         put leftM into topM
+      else
+         put actualMargin into topM
       end if
       
-      rect_SubtractMargins groupRect, bWidth
+      put item 3 of someMargin into actualMargin
+      if actualMargin is empty then
+         put leftM into rightM
+      else
+         put actualMargin into rightM
+      end if
+      
+      put item 4 of someMargin into actualMargin
+      if actualMargin is empty then
+         put topM into bottomM
+      else
+         put actualMargin into bottomM
+      end if
+   else
+      put item 1 of someMargin into leftM
+      put item 2 of someMargin into topM
+      put item 3 of someMargin into rightM
+      put item 4 of someMargin into bottomM
    end if
+   put leftM,topM,rightM,bottomM into someMargin
+end margin_Normalize
+
+command rect_ExtractDimensions someRect, @someW, @someH
+   put item 3 of someRect - item 1 of someRect into someW
+   put item 4 of someRect - item 2 of someRect into someH
+end rect_ExtractDimensions
+
+function rect_GetCentre someRect
+   -- does not always return the same as the loc
+   -- out by one pixel (rounding error)? trunc or round?
+   put item 1 of someRect into someLeft
+   put trunc((item 3 of someRect - someLeft)/2) into halfWidth
+   -- put round((item 3 of someRect - someLeft)/2) into halfWidth
+   put item 2 of someRect into someTop
+   -- put round((item 4 of someRect - someTop)/2) into halfHeight
+   put trunc((item 4 of someRect - someTop)/2) into halfHeight
+   put someLeft + halfWidth into item 1 of someMiddle
+   put someTop + halfHeight into item 2 of someMiddle
+   return someMiddle
+end rect_GetCentre
+
+function rect_LocWidthHeight someLoc, newW, newH
+   put round(newW/2) into leftBit
+   put newW - leftBit into rightBit
+   put item 1 of someLoc into someX
+   put someX - leftBit into item 1 of someRect
+   put someX + rightBit into item 3 of someRect
    
-   rect_SubtractMargins groupRect, someMargin
-   return groupRect
-end _InnerRect
+   put round(newH/2) into upBit
+   put newH - upBit into downBit
+   put item 2 of someLoc into someY
+   put someY - upBit into item 2 of someRect
+   put someY + downBit into item 4 of someRect
+   
+   return someRect
+end rect_LocWidthHeight
+

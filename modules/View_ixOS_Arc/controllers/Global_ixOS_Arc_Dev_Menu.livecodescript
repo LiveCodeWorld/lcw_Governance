@@ -30,6 +30,14 @@ end menu_CheckTarget
 
 --> Global | ixOS | Arc | Dev | Menu
 -
+on menu_DisplayArrowData aView
+   put the arrow_Data of aView into aData
+   display_Data aData, "arrow_Data"
+end menu_DisplayArrowData
+
+private command _
+end _
+
 on menu_Points aView
    -- 6,4 with arrow lineSize 1
    -- 1 -- without arrows lineSize 1

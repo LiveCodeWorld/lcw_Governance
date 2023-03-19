@@ -77,6 +77,10 @@ end menu_EndArrow
 private on __
 end __
 
+on menu_DeleteArrow aView
+   object_Delete aView
+end menu_DeleteArrow
+
 on submenu_Layout
    return "Global | ixOS | Arc | Layout | Menu"
 end submenu_Layout

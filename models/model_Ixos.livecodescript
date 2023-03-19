@@ -8,6 +8,18 @@ type: model
 version: 0.1
 
 
+--> Working on
+-
+command ix_ExportModel ixView, pModelName
+   if pModelName is empty then put the view_ModelName of ixView into pModelName
+   --
+   put the saved_TableData of ixView into sData
+   set the module_Model [pModelName] of ixView to sData
+   put the result into modeFile
+   return modeFile
+end ix_ExportModel
+
+
 --> Props | Chart
 -
 getprop charts_Visible
@@ -82,74 +94,6 @@ getprop ix_Views
 end ix_Views
 
 
---> Ixos | Model
--
-getprop view_ModelName [pModelName]
-   if pModelName is empty then put the short name of the target into pModelName
-   
-   if char 1 to 5 of pModelName = "View|" then
-      delete char 1 to 5 of pModelName
-   end if
-   return pModelName
-end view_ModelName
-
-getprop view_ModelShortFile [pModelName]
-   put the view_ModelName [pModelName] of me into pModelName
-   --
-   set the itemdelimiter to "."
-   if the number of items of pModelName = 1 then
-      put pModelName & ".array" into shortFile
-   else
-      put pModelName into shortFile
-   end if
-   return shortFile
-end view_ModelShortFile
-
-
---> View | Model
--
-getprop module_ModelFile [pModelName]
-   put the view_ModelShortFile [pModelName] of the target into shortFile
-   put the template_Object of the target into templateObject
-   if exists (templateObject) is false then return empty
-   --
-   put the module_ModelFolder of templateObject into modelDataFolder
-   put dataFolder_GetFile (modelDataFolder, shortFile) into mFile
-   return mFile
-end module_ModelFile
-
-getprop module_ModelFolder
-   put the module_Folder of the target into moduleFolder
-   put folder_AddShort (moduleFolder, "models") into moduleModelFolder
-   return moduleModelFolder
-end module_ModelFolder
-
-getprop module_Model [pModelName]
-   put the module_ModelFile [pModelName] of the target into modelDataFile
-   if modelDataFile is empty then return empty
-   -- 
-   put array_FetchModel (modelDataFile) into modelArray
-   return modelArray
-end module_Model
-
-setprop module_Model [pModelName] dataArray
-   put the module_ModelFile [pModelName] of the target into mFile   
-   if mFile is empty then return empty
-   -- 
-   array_SaveModel mFile, dataArray
-   return mFile
-end module_Model
-
-getprop module_ModelNames [listShortFiles]
-   put the module_ModelFolder of the target into modelDataFolder
-   put folder_ListShortFiles (modelDataFolder) into shortFiles
-   if listShortFiles is not true then
-      replace ".array" with empty in shortFiles
-   end if
-   return shortFiles
-end module_ModelNames
-
-
 --> Objects
 -
 getprop ix_Arrows
@@ -180,7 +124,8 @@ getprop ix_LinkArray
          if toView = fromView then next repeat -- not self
          --
          put the displayed_Data of toView into dData
-         put array_IndexFind (dData, "title", fromName) into foundIndexNum
+         put dData ["vData"] into vData
+         put array_IndexFind (vData, "title", fromName) into foundIndexNum
          if foundIndexNum > 0 then
             put the short name of toView into toName
             put foundIndexNum into ixLinkArray [fromName][toName]["indexNum"]

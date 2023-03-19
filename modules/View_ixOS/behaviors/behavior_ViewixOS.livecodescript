@@ -17,6 +17,139 @@ local LocalArray
 
 --> Working on
 -
+
+--> Geometry | Arrows
+-
+getprop border_Loc [pItems]
+   put item 1 of pItems into sBorder
+   put item 2 of pItems into stepNum
+   put item 3 of pItems into numOfSteps
+   if stepNum is empty then
+      put 1 into stepNum
+      put 2 into numOfSteps
+   end if
+   
+   put the rect of me into myRect
+   put 2 into yFiddle
+   switch char 1 of sBorder
+      case "t"
+         put item 2 of myRect into myTop
+         subtract yFiddle from myTop
+         put myTop into item 2 of bLoc
+         put _BLocX (myRect, stepNum, numOfSteps) into item 1 of bLoc
+         return bLoc
+      case "b"
+         put item 4 of myRect into myBottom
+         add yFiddle to myBottom
+         put myBottom into item 2 of bLoc
+         put _BLocX (myRect, stepNum, numOfSteps) into item 1 of bLoc
+         return bLoc
+      case "l"
+         put item 1 of myRect into item 1 of bLoc
+         put _BLocY (myRect, stepNum, numOfSteps) into item 2 of bLoc
+         return bLoc
+      case "r"
+         put item 3 of myRect into item 1 of bLoc
+         put _BLocY (myRect, stepNum, numOfSteps) into item 2 of bLoc
+         return bLoc
+      default
+         return empty
+   end switch
+end border_Loc
+
+private function _BLocY myRect, stepNum, numOfSteps
+   put item 2 of myRect into myTop
+   put item 4 of myRect - myTop into myHeight
+   put myTop + stepNum * myHeight/numOfSteps into bLocY
+   return bLocY
+end _BLocY
+
+private function _BLocX myRect, stepNum, numOfSteps
+   put item 1 of myRect into myLeft
+   put item 3 of myRect - myLeft into myWidth
+   put myLeft + stepNum * myWidth/numOfSteps into bLocX
+   return bLocX
+end _BLocX
+
+
+--> Model
+-
+/*
+The saved_Data [vName] is stored as a group custom property.
+This can be trapped with a getprop at a higher (card) level, and processes intelligently.
+But the default works and stores it as a custom property.
+Remember to save the stack, if you  want the value to perrsist
+*/
+
+getprop saved_TableData
+   put the currency_Symbol of me into currencySymbol
+   --
+   put _GetSavedData() into aData
+   put _ConstructTableData (aData) into sTableData
+   
+   put the total_Budget of me into totalBudget
+   _AddShardDataTable sTableData, currencySymbol, totalBudget
+   --
+   put totalBudget into sTableData ["total_Budget"]
+   put the currency_Symbol of me into sTableData ["cSymbol"]
+   return sTableData
+end saved_TableData
+
+setprop saved_TableData [pDisplayFormat] sTableData   
+   set the currency_Symbol of me to sTableData ["cSymbol"]
+   put sTableData ["vData"] into vData
+   _AddShardViewData vData, currencySymbol, totalBudget
+   _SetSavedData vData
+   --
+   set lockmessages to true
+   set the total_Budget of me to sTableData ["total_Budget"]
+   set lockmessages to false
+   --
+   if pDisplayFormat is not empty then
+      set the display_Format of me to pDisplayFormat
+   end if
+   return sTableData
+end saved_TableData
+
+getprop displayed_Data
+   put the saved_TableData of me into sData
+   return sData
+end displayed_Data
+
+setprop displayed_Data
+   set the saved_TableData of me to sData
+   return the result
+end displayed_Data
+
+
+--> Displayed
+-
+getprop displayed_AbbreviatedData
+   put the display_Format of me into sFormat
+   put the currency_Symbol of me into currencySymbol
+   put the displayed_Data of me into vData
+   --
+   switch sFormat
+      case "abbreviated"
+         return vData
+      case "short"
+         _ShortToAbbreviated vData, currencySymbol
+         return vData
+      default
+         _LongToAbbreviated vData, currencySymbol
+         return vData
+   end switch
+end displayed_AbbreviatedData
+
+getprop displayed_ShardTotal
+   put the displayed_Data of me into vData
+   put ix_SumShards (vData) into sTotal
+   return sTotal
+end displayed_ShardTotal
+
+
+--> Props
+-
 getprop show_Chart
    put the linked_Chart of me into chartObject
    if exists (chartObject) is false then return empty
@@ -85,11 +218,35 @@ on nameChanged pOldName, pNewName
    end if
 end namechanged
 
+getprop mouse_Up
+   put the uOPN ["mouse_Up"] of me into mDoubleUp
+   return mDoubleUp
+end mouse_Up
+
+setprop mouse_Up mDoubleUp
+   set the uOPN ["mouse_Up"] of me to mDoubleUp
+end mouse_Up
+
+getprop mouse_DoubleUp
+   put the uOPN ["mouse_DoubleUp"] of me into mDoubleUp
+   return mDoubleUp
+end mouse_DoubleUp
+
+setprop mouse_DoubleUp mDoubleUp
+   set the uOPN ["mouse_DoubleUp"] of me to mDoubleUp
+end mouse_DoubleUp
+
 on mouseUp
    if word 1 of the target = "button" then
       ix_CalculateShards
    else
-      pass mouseUp
+      put the mouse_Up of me into mUp
+      if mUp is not empty then
+         put the clickText into sLine
+         dispatch mUp with sLine
+      else
+         pass mouseUp
+      end if
    end if
 end mouseUp
 
@@ -100,7 +257,13 @@ on mouseDoubleUp
          set the show_Chart [false] of me to (sBoolean is false)
          break
       default
-         pass mouseDoubleUp
+         put the mouse_DoubleUp of me into mDoubleUp
+         if mDoubleUp is not empty then
+            put the clickText into sLine
+            dispatch mDoubleUp with sLine
+         else
+            pass mouseDoubleUp 
+         end if
    end switch
 end mouseDoubleUp
 
@@ -315,46 +478,6 @@ private function _NameLinkedChart
    end if
 end _NameLinkedChart
 
-
---> Geometry | Arrows
--
-getprop border_Loc [pItems]
-   put item 1 of pItems into sBorder
-   put item 2 of pItems into stepNum
-   put item 3 of pItems into numOfSteps
-   if stepNum is empty then
-      put 1 into stepNum
-      put 2 into numOfSteps
-   end if
-   
-   put the rect of me into myRect
-   put 2 into yFiddle
-   switch char 1 of sBorder
-      case "t"
-         put item 2 of myRect into myTop
-         subtract yFiddle from myTop
-         put myTop into item 2 of bLoc
-         put _BLocX (myRect, stepNum, numOfSteps) into item 1 of bLoc
-         return bLoc
-      case "b"
-         put item 4 of myRect into myBottom
-         add yFiddle to myBottom
-         put myBottom into item 2 of bLoc
-         put _BLocX (myRect, stepNum, numOfSteps) into item 1 of bLoc
-         return bLoc
-      case "l"
-         put item 1 of myRect into item 1 of bLoc
-         put _BLocY (myRect, stepNum, numOfSteps) into item 2 of bLoc
-         return bLoc
-      case "r"
-         put item 3 of myRect into item 1 of bLoc
-         put _BLocY (myRect, stepNum, numOfSteps) into item 2 of bLoc
-         return bLoc
-      default
-         return empty
-   end switch
-end border_Loc
-
 getprop cash_Value [lineNum]
    put the view_Text of the target into vText
    put item 2 of line lineNum of vText into sCash
@@ -532,63 +655,6 @@ on clear_OldData
 end clear_OldData
 
 
---> Model
--
-/*
-The saved_Data [vName] is stored as a group custom property.
-This can be trapped with a getprop at a higher (card) level, and processes intelligently.
-But the default works and stores it as a custom property.
-Remember to save the stack, if you  want the value to perrsist
-*/
-
-getprop saved_TableData
-   put the currency_Symbol of me into currencySymbol
-   --
-   put _GetSavedData() into aData
-   put _ConstructTableData (aData) into sTableData
-   
-   put the total_Budget of me into totalBudget
-   _AddShardDataTable sTableData, currencySymbol, totalBudget
-   --
-   put totalBudget into sTableData ["total_Budget"]
-   put the currency_Symbol of me into sTableData ["cSymbol"]
-   return sTableData
-end saved_TableData
-
-setprop saved_TableData [pDisplayFormat] sTableData   
-   set the currency_Symbol of me to sTableData ["cSymbol"]
-   put sTableData ["vData"] into vData
-   _AddShardViewData vData, currencySymbol, totalBudget
-   _SetSavedData vData
-   --
-   set lockmessages to true
-   set the total_Budget of me to sTableData ["total_Budget"]
-   set lockmessages to false
-   --
-   if pDisplayFormat is not empty then
-      set the display_Format of me to pDisplayFormat
-   end if
-   return sTableData
-end saved_TableData
-
-getprop displayed_AbbreviatedData
-   put the display_Format of me into sFormat
-   put the currency_Symbol of me into currencySymbol
-   put the displayed_Data of me into vData
-   --
-   switch sFormat
-      case "abbreviated"
-         return vData
-      case "short"
-         _ShortToAbbreviated vData, currencySymbol
-         return vData
-      default
-         _LongToAbbreviated vData, currencySymbol
-         return vData
-   end switch
-end displayed_AbbreviatedData
-
-
 --> Data | CSV
 -
 getprop income_CsvData
@@ -702,12 +768,6 @@ getprop shard_Data
    put the result into shardData
    return shardData
 end shard_Data
-
-getprop displayed_ShardTotal
-   put the displayed_Data of me into vData
-   put ix_SumShards (vData) into sTotal
-   return sTotal
-end displayed_ShardTotal
 
 getprop saved_ShardTotal
    put the saved_TableData of me into sData
@@ -1300,20 +1360,6 @@ private command _AddShardsToTableData @sTableData, budgetTotal, percentLeft, max
       end if
    end repeat
 end _AddShardsToTableData
-
-private function _BLocY myRect, stepNum, numOfSteps
-   put item 2 of myRect into myTop
-   put item 4 of myRect - myTop into myHeight
-   put myTop + stepNum * myHeight/numOfSteps into bLocY
-   return bLocY
-end _BLocY
-
-private function _BLocX myRect, stepNum, numOfSteps
-   put item 1 of myRect into myLeft
-   put item 3 of myRect - myLeft into myWidth
-   put myLeft + stepNum * myWidth/numOfSteps into bLocX
-   return bLocX
-end _BLocX
 
 private command _NormalizeCashTotal @longNum, pCurrencySymbol
    -- cash totals are always long numbers
