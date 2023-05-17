@@ -27,6 +27,21 @@ end menu_Target
 
 --> Global | Grid | Model | List | Line | Menu
 -
+on menu_Test shortNameOrFile
+   put grid_GetShapeData (shortNameOrFile) into shapeData
+   --
+   display_Clone "View|Grid", "Grid Shape Data", shapeData, "displayed_Data", "mouse"
+   put the result into dView
+end menu_Test
+
+on menu_Display shortNameOrFile
+   put grid_GetShapeData (shortNameOrFile) into shapeData
+   display_GridShapeData shapeData
+end menu_Display
+
+private command _
+end _
+
 on menu_Duplicate shortNameOrFile
    grid_DuplicateModel shortNameOrFile
    display_GridModels

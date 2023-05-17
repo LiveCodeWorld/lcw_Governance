@@ -38,10 +38,6 @@ end menu_DisplayedData
 private command ___
 end ___
 
-on menu_Clear gridView
-   grid_DeleteTiles gridView
-end menu_Clear
-
 on menu_TestGridDimensions gridView
    breakpoint
    set the grid_Dimensions of gridView to 10,10

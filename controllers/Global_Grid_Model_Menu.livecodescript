@@ -20,18 +20,22 @@ local LocalArray
 getprop menu_Target [tObject]
    put the display_View of tObject into dView
    put dView into LocalArray ["dView"]
+   --
    if exists (dView) then
-      put the displayed_Object of dView into tObject
-      return tObject
-   else
-      return tObject
+      put the displayed_Object of dView into gridView
+      if exists (gridView) then
+         return gridView
+      end if
    end if
+   --
+   put grid_DisplayView() into gridView
+   return gridView
 end menu_Target
 
-getprop setDisplayedData_Params
-   put revLoadedStacks ("application") into stackNames
-   filter stackNames with "View|Grid *"
-   return stackNames
+-- getprop setDisplayedData_Params
+put revLoadedStacks ("application") into stackNames
+filter stackNames with "View|Grid *"
+return stackNames
 end setDisplayedData_Params
 
 
@@ -54,12 +58,11 @@ on menu_DisplayModelData gridView, modelName
    display_ModuleModel gridView, modelName
 end menu_DisplayModelData
 
-on menu_SetDisplayedData gridView, stackName
+on menu_SetDisplayedData gridView
    put LocalArray ["dView"] into dView
-   put the long id of group 1 of stack stackName into targetGridView
    --
    put the displayed_Data of dView into shapeData
-   set the displayed_Data of targetGridView to shapeData   
+   set the displayed_Data of gridView to shapeData   
 end menu_SetDisplayedData
    
 private command _
@@ -120,6 +123,3 @@ on menu_ListGridModels
    display_GridModels
 end menu_ListGridModels
 
-on menu_DisplayedObject gridView
-   put the stack_Name of gridView 
-end menu_DisplayedObject

@@ -92,3 +92,11 @@ on menu_ArrowNameLink aView
    put the arrow_NameLink of aView into nameLink
    put nameLink
 end menu_ArrowNameLink
+
+private command __
+end __
+
+on menu_EditBehavior aView
+   put the behavior of aView into bObject
+   edit the script of bObject
+end menu_EditBehavior

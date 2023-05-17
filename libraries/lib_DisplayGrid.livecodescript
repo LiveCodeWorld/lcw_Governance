@@ -12,6 +12,47 @@ version: 0.1
 
 --> Working on
 -
+function grid_DisplayView
+   put display_FindCloned ("View|Grid", "Grid Shape Data") into dView
+   return dView
+end grid_DisplayView
+
+command display_NamedGridShapes shortNameOrFile
+   put grid_GetShapeData (shortNameOrFile) into shapeData
+   --
+   display_GridShapes shapeData
+   put the result into dView
+   return dView
+end display_NamedGridShapes
+
+command display_GridShapes shapeData, pLocOrRect, pStackStyle
+   display_Clone "View|Grid", "Grid Shape Data", shapeData, "displayed_Data", pLocOrRect, pStackStyle
+   put the result into dView
+   return dView
+end display_GridShapes
+
+on mDouble_ArrowID dView, arrowID
+   put the displayed_Object of dView into gridView
+   put the long id of control id arrowID of gridView into sObject
+   --
+   set the linesize of sObject to 4
+   if the shiftkey is "Down" then
+      display_ObjectProperties sObject
+   end if
+end mDouble_ArrowID
+
+command display_GridArrowIndex gridView
+   put the grid_ArrowIDs of gridView into cIDs
+   --
+   display_Data cIDs, "Arrow IDs", "Grid Arrows"
+   put the result into displayView
+   --
+   display_SetInteractions displayView, "Grid | Arrow", "mDouble_ArrowID", "lcw_Governance"
+   set the displayed_Object of displayView to gridView
+   --
+   return displayView
+end display_GridArrowIndex
+
 on grid_EditDisplayLine displayView, someLine
    -- shape_Array,1,name
    put the displayed_Object of displayView into gridView
@@ -127,12 +168,18 @@ on mDoubleUp_GridModelName displayView, modelName
    put the displayed_Object of displayView into gridView
    put grid_GetShapeData (modelName) into shapeData
    --
-   if exists (gridView) then
-      set the displayed_Data of gridView to shapeData
-      put the result into shapeData
-   end if
-   --
-   display_GridShapeData shapeData, gridView  
+   switch
+      case the optionKey is "Down"
+         breakpoint
+      case exists (gridView)
+         set the displayed_Data of gridView to shapeData
+         break
+      case the shiftKey is "Down"
+         display_GridShapeData shapeData, gridView  
+         break
+      default
+         display_GridShapes shapeData
+   end switch
 end mDoubleUp_GridModelName
 
 command display_GridModels pGridView, pListShort
@@ -146,11 +193,12 @@ command display_GridModels pGridView, pListShort
    display_Data sIndex, "Grid Models", "Grid"
    put the result into displayView
    --
-   set the displayed_Object of displayView to pGridView
+   if exists (pGridView) then
+      set the displayed_Object of displayView to pGridView
+   end if
    set the list_Short of displayView to sBoolean
    --
    display_SetInteractions displayView, "Grid | Model | List", "mDoubleUp_GridModelName", "model_Grid"
    return displayView
 end display_GridModels
-
 

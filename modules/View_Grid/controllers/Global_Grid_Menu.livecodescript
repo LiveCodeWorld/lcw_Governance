@@ -168,13 +168,12 @@ on menu_DisplayedData gridView
 end menu_DisplayedData
 
 on menu_ListGridModels gridView
-   display_GridModels gridView
+   display_GridModels -- gridView
 end menu_ListGridModels
 
 on menu_DisplayShapeData gridView, whichShape
    put grid_GetShapeData (whichShape) into shapeData
    --
-   -- put whichShape into shapeData ["title"] -- should already be set
    display_GridShapeData shapeData, gridView
 end menu_DisplayShapeData
 
@@ -188,3 +187,8 @@ end submenu_Create
 on submenu_Test
    return "Global | Grid | Test | Menu"
 end submenu_Test
+
+on menu_LayoutControl gridView
+   dispatch "LayoutControl" to gridView
+end menu_LayoutControl
+

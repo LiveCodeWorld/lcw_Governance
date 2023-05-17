@@ -10,6 +10,166 @@ version: 0.1
 /*Some help*/
 
 
+--> Steps
+-
+function steps_GetSnakeNum tileNumber, gridDimensions
+   put item 1 of gridDimensions into xDimension
+   put item 2 of gridDimensions into yDimension
+   --
+   put (tileNumber - 1) div xDimension into rowNum
+   add 1 to rowNum
+   --
+   put (tileNumber - 1) mod (xDimension - 0) into leftOverX
+   --
+   put rowNum mod 2 = 1 into isOddLine
+   if isOddLine is true then
+      put tileNumber into snakeNumber
+   else
+      put (rowNum -1) * xDimension + (xDimension - leftOverX) into snakeNumber 
+   end if
+   return snakeNumber
+end steps_GetSnakeNum
+
+
+--> Grid | Arrows
+-
+command grid_Create shapeData, gridView, pFrameRect
+   if exists (gridView) is false then return empty
+   if pFrameRect is empty then put the rect of gridView into pFrameRect
+   --
+   put shapeData ["shape_Array"] into shapeArray
+   put shapeData ["grid_Dimensions"] into gridDimensions
+   put item 1 of gridDimensions into tilesAcross
+   put item 2 of gridDimensions into tilesDown
+   --
+   lock screen
+   --
+   set the opaque of the templategraphic to true
+   set the showName of the templategraphic to true
+   grid_DeleteTiles gridView
+   --
+   set lockmessages to true
+   set the rect of gridView to pFrameRect
+   set lockmessages to false
+   
+   repeat with itemNum = 1 to item 2 of the extents of shapeArray 
+      put shapeArray [itemNum] into cArray
+      tile_Create cArray, pFrameRect, tilesAcross, tilesDown, gridView
+      put the result into tileObject
+      put cArray into shapeArray [itemNum]
+      --
+      if exists (tileObject) then
+         # Add or update "id" entry in shapeData with newly created tile id
+         put the short id of tileObject into shapeData ["shape_Array"][itemNum]["id"]
+      else
+         breakpoint
+      end if
+   end repeat
+   
+   # Create Arrows
+   grid_CreateArrows shapeData, gridView
+   
+   # Layout Grid (just in case geometries were not set right)
+   set the shape_Data of gridView to shapeData
+   dispatch "LayoutControl" to gridView
+   unlock screen
+   --
+   return shapeData
+end grid_Create
+
+command grid_CreateArrows shapeData, gridView
+   lock screen
+   put shapeData ["grid_ArrowData"] into arrowData
+   repeat with indexNum = 1 to item 2 of the extents of arrowData
+      grid_CreateArrow shapeData, gridView, indexNum
+   end repeat
+   unlock screen
+end grid_CreateArrows
+
+command grid_CreateArrow shapeData, gridView, indexNum
+   put shapeData ["grid_ArrowData"][indexNum] into propArray
+   if propArray is not an array then return false
+   --
+   put propArray ["from_Name"] into fromName
+   put propArray ["to_Name"] into toName
+   --
+   put propArray ["from_Number"] into fromNumber
+   put propArray ["to_Number"] into toNumber
+   --
+   put shapeData ["shape_Array"][fromNumber]["id"] into fromID
+   if exists (control id fromID of gridView) is false then
+      breakpoint
+      exit to top
+   end if
+   put shapeData ["shape_Array"][toNumber]["id"] into toID
+   if exists (control id toID of gridView) is false then
+      breakpoint
+      exit to top
+   end if
+   
+   put the long id of control id fromID of gridView into fromObject
+   put the long id of control id toID of gridView into toObject
+   -- 
+   grid_CreateArrowLink fromObject, toObject, gridView, propArray
+   put the result into arrowView
+   --
+   put "Arrow" && fromNumber,toNumber into aName
+   set the name of arrowView to aName
+   
+   /*
+   # Fix names
+   set the name of fromObject to fromName
+   set the label of fromObject to fromNumber
+   set the tooltip of fromObject to fromName
+   --
+   set the name of toObject to toName
+   set the label of toObject to toNumber
+   set the tooltip of toObject to toName
+   */
+   return arrowView
+end grid_CreateArrow
+
+command grid_CreateArrowLink fromTile, toTile, gridView, propArray
+   if exists (gridView) is false then
+      return empty
+   end if
+   
+   lock screen
+   view_InsertFromPath "View|ixOS|Arc", gridView
+   put the result into aView
+   --
+   set the lineSize of aView to 4
+   set the startArrow of aView to false
+   set the endArrow of aView to false
+   --
+   set the from_Object of aView to fromTile
+   set the to_Object of aView to toTile
+   --
+   put propArray ["from_Side"] into fromSide
+   put propArray ["from_StepNum"] into fromStepNum
+   put propArray ["from_SliceNum"] into fromSliceNum
+   put _ConstructArrowItems (fromSide, fromStepNum, fromSliceNum) into fromItems
+   set the from_Items of aView to fromItems
+   --
+   put propArray ["to_Side"] into toSide
+   put propArray ["to_StepNum"] into toStepNum
+   put propArray ["to_SliceNum"] into toSliceNum
+   put _ConstructArrowItems (toSide, toStepNum, toSliceNum) into toItems
+   set the to_Items of aView to toItems
+   --
+   dispatch "LayoutControl" to aView
+   unlock screen
+   --
+   return aView
+end grid_CreateArrowLink
+
+private function _ConstructArrowItems sSide, sStepNum, sSliceNum
+   if sStepNum is empty then put 1 into sStepNum
+   if sSliceNum is empty then put 2 into sStepNum
+   return sSide,sStepNum,sSliceNum
+end _ConstructArrowItems
+
+
 --> Geometry | Arrows
 -
 getprop border_Loc [pItems]
@@ -77,16 +237,6 @@ function tile_GetNumber shortID, shapeArray
    return 0
 end tile_GetNumber
 
-function tile_GetObject shortID, shapeArray
-   repeat for each key titleNum in shapeArray
-      put shapeArray [titleNum]["id"] into testID
-      if testID = shortID then
-         return the long id of me
-      end if
-   end repeat
-   return empty
-end tile_GetObject
-
 function tile_GetPoints tilePoints, squareRect, tilesAcross, tilesDown
    replace "|" with CR in tilePoints
    --
@@ -109,6 +259,25 @@ function tile_GetPoints tilePoints, squareRect, tilesAcross, tilesDown
    return newPoints
 end tile_GetPoints
 
+
+--> Grid | Delete
+-
+command grid_DeleteArrows gridView
+   put the grid_ArrowIDs of gridView into cIDs
+   --
+   _DeleteControls cIDs, gridView
+end grid_DeleteArrows
+
+command grid_DeleteTiles gridView
+   --  put the controlids of gridView into cIDs
+   put the childControlIDs of gridView into cIDs
+   --
+   _DeleteControls cIDs, gridView
+end grid_DeleteTiles
+
+
+--> Grid | Geometry
+-
 function grid_GetLoc x, y, startX, startY, tileWidth, pTileHeight
    if pTileHeight is not a number then
       put tileWidth into pTileHeight
@@ -187,42 +356,8 @@ command grid_ReizeTitles shapeArray, gridView, frameRect, pTilesAcross, pTilesDo
 end grid_ReizeTitles
 
 
---> Grid | Create
+--> Tiles | Create
 -
-command grid_Create shapeArray, gridView, frameRect, pTilesAcross, pTilesDown
-   if pTilesAcross is empty then put 10 into pTilesAcross
-   if pTilesDown is empty then put pTilesAcross into pTilesAcross
-   if exists (gridView) is false then return empty
-   
-   set the opaque of the templategraphic to true
-   set the showName of the templategraphic to true
-   --
-   lock screen
-   grid_DeleteTiles gridView
-   --
-   set lockmessages to true
-   set the rect of gridView to frameRect
-   set lockmessages to false
-   
-   repeat with itemNum = 1 to item 2 of the extents of shapeArray 
-      put shapeArray [itemNum] into cArray
-      tile_Create cArray, frameRect, pTilesAcross, pTilesDown, gridView
-      put the result into tileObject
-      put cArray into shapeArray [itemNum]
-      --
-      if exists (tileObject) then
-         put the short id of tileObject into shapeArray [itemNum]["id"]
-      else
-         breakpoint
-      end if
-   end repeat
-   
-   -- # Update the shape_Data with new shapeArray which includes created short ids
-   -- set the shape_Array of gridView to shapeArray
-   unlock screen
-   return shapeArray
-end grid_Create
-
 command tile_Create @cArray, frameRect, pTilesAcross, pTilesDown, gridView
    put cArray ["control_Type"] into tileType
    --
@@ -283,7 +418,6 @@ private command _SetDefaultStyle @cArray, tilePoints
 end _SetDefaultStyle
 
 private command _SetProps cArray, tileObject
-   -- put _CleanPropArray (cArray) into propArray
    _DeleteCustom cArray
    put the result into customArray
    set the properties of tileObject to cArray
@@ -294,11 +428,6 @@ private command _SetProps cArray, tileObject
       set the cProp of tileObject to cValue
    end repeat
 end _SetProps
-
-private function _CleanPropArray propArray
-   _DeleteCustom propArray
-   return propArray
-end _CleanPropArray
 
 private command _DeleteCustom @propArray
    local customArray
@@ -316,13 +445,10 @@ private command _DeleteCustom @propArray
    return customArray
 end _DeleteCustom
 
-command grid_DeleteTiles gridView
+private command _DeleteControls cIDs, gridView
    lock screen
-   --  put the controlids of gridView into cIDs
-   put the childControlIDs of gridView into cIDs
    repeat for each line cID in cIDs
-      set the cursor to busy
       delete control id cID of gridView
    end repeat
    unlock screen
-end grid_DeleteTiles
+end _DeleteControls

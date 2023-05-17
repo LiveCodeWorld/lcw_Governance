@@ -18,7 +18,9 @@ local LocalArray
 --> Menu | Props
 -
 getprop menu_Target [tObject]
-   return display_MenuTarget(tObject)
+   put the tile_Object of tObject into tileObject
+   return tileObject
+   -- return display_MenuTarget(tObject)
    -- return the display_View of tObject
 end menu_Target
 
@@ -70,12 +72,34 @@ on menu_Link tileObject, toName
    set the from_Object of aView to tileObject
    set the to_Object of aView to toObject
    --
-   set the from_Items of aView to "right,1,1"
-   set the to_Items of aView to "left,1,1"
+   set the from_Items of aView to "right,1,2"
+   set the to_Items of aView to "left,1,2"
    --
    dispatch "LayoutControl" to aView
    unlock screen
 end menu_Link
+
+on menu_Rename tileObject
+   put the grid_View of tileObject into gridView
+   put the short name of tileObject into sName
+   put lcw_Ask ("Step number...", sName, "Rename", tileObject) into sNum
+   put lcw_Ask ("Rename tile...", sName, "Rename", tileObject) into sName
+   put the tile_Number of tileObject into indexNum
+   --
+   put the displayed_Data of tileObject into shapeData
+   put sName into shapeData ["shape_Array"][indexNum]["name"]
+   put sNum into shapeData ["shape_Array"][indexNum]["label"]
+   set the shape_Data of tileObject to shapeData
+   --
+   lock screen
+   set the name of tileObject to sName
+   set the label of tileObject to sNum
+   display_GridShapeData shapeData, gridView
+   unlock screen
+end menu_Rename
+
+private command _
+end _
 
 on menu_TileStyle tileObject, tStyle
    set the tile_Style of tileObject to tStyle

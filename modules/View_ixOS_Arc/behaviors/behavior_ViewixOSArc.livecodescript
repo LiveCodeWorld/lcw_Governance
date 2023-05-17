@@ -10,6 +10,133 @@ version: 0.2
 
 --> Working on
 -
+
+--> Props | Compound
+-
+getprop arrow_Data
+   set the customPropertySet of me to "arrow_Array"
+   put the customproperties of me into arrowData
+   set the customPropertySet of me to empty
+   --
+   put arrowData ["from_Object"] into fromObject
+   if exists (fromObject) then
+      put the short id of fromObject into arrowData ["from_ID"]
+      put the tile_Number of fromObject into arrowData ["from_Number"]
+      --
+      put the short name of fromObject into arrowData ["from_Name"]
+      put the label of fromObject into arrowData ["from_Label"]
+   end if
+   put arrowData ["to_Object"] into toObject
+   if exists (toObject) then
+      put the short id of toObject into arrowData ["to_ID"]
+      put the tile_Number of toObject into arrowData ["to_Number"]
+      --
+      put the short name of toObject into arrowData ["to_Name"]
+      put the label of toObject into arrowData ["to_Label"]
+   end if
+   --
+   return arrowData
+end arrow_Data
+
+getprop from_Items
+   put the from_Side of me into fItems
+   put the from_StepNum of me into item 2 of fItems
+   put the from_SliceNum of me into item 3 of fItems
+   return fItems
+end from_Items
+
+setprop from_Items [pFromName] fItems  
+   _NormaliseItems fItems
+   if the result is false then return empty
+   
+   set the from_Side of me to item 1 of fItems
+   set the from_StepNum of me to item 2 of fItems
+   set the from_SliceNum of me to item 3 of fItems
+   --
+   if pFromName is not empty then
+      set the from_Name of me to pFromName
+   end if
+   return fItems
+end from_Items
+
+getprop to_Items
+   put the to_Side of me into tItems
+   put the to_StepNum of me into item 2 of tItems
+   put the to_SliceNum of me into item 3 of tItems
+   return tItems
+end to_Items
+
+setprop to_Items [pToName] tItems
+   _NormaliseItems tItems
+   if the result is false then return empty
+   
+   set the to_Side of me to item 1 of tItems
+   set the to_StepNum of me to item 2 of tItems
+   set the to_SliceNum of me to item 3 of tItems
+   --
+   if pToName is not empty then
+      set the to_Name of me to pToName
+   end if
+   return tItems
+end to_Items
+
+
+--> Events
+-
+on resizeControl
+   LayoutControl
+end resizeControl
+
+command LayoutControl pRect
+   if pRect is empty then put the rect of me into pRect
+   --
+   -- set the rect of me to pRect
+   --
+   put the arrow_Data of me into arrowData
+   set the arrow_PointLink of me to arrowData
+end LayoutControl
+
+on mouseDown pButtonNumber
+   /*
+   put the behavior of me into bObject
+   if exists (bObject) is false then
+      breakpoint
+   end if
+   set the behavior of me to bObject
+   */
+   
+   switch pButtonNumber
+      case 3
+         put menu_GetGlobalButton() into mButton
+         mArray_PopUp "Global | IxOS | Arc | Menu", mButton
+         break
+      default
+         pass mouseDown
+   end switch
+end mouseDown
+
+on mouseUp
+   arrow_AnimateBall true
+   pass mouseUp
+end mouseUp
+
+on arrow_AnimateBall pReverse
+   put the points of me into pathPoints
+   if pReverse is not false then
+      put index_Reverse (pathPoints) into pathPoints
+   end if
+   put the card_Object of me into cardObject
+   --
+   set the ball_Path ["3"] of cardObject to pathPoints
+   put the result into newBall
+   --
+   ball_PathAnimate newBall
+   return newBall
+end arrow_AnimateBall
+
+
+--> Objects
+-
 private function _FromView fromName
    put the from_Object of me into fromObject
    if exists (fromObject) then return fromObject
@@ -78,45 +205,6 @@ setprop to_Name toName
    set the arrow_Array ["to_Name"] of me to toName
 end to_Name
 
-
---> Events
--
-on mouseDown pButtonNumber
-   put the behavior of me into bObject
-   if exists (bObject) is false then
-      breakpoint
-   end if
-   set the behavior of me to bObject
-   
-   switch pButtonNumber
-      case 3
-         put menu_GetGlobalButton() into mButton
-         mArray_PopUp "Global | IxOS | Arc | Menu", mButton
-         break
-      default
-         pass mouseDown
-   end switch
-end mouseDown
-
-on mouseUp
-   arrow_AnimateBall true
-   pass mouseUp
-end mouseUp
-
-on arrow_AnimateBall pReverse
-   put the points of me into pathPoints
-   if pReverse is not false then
-      put index_Reverse (pathPoints) into pathPoints
-   end if
-   put the card_Object of me into cardObject
-   --
-   set the ball_Path ["3"] of cardObject to pathPoints
-   put the result into newBall
-   --
-   ball_PathAnimate newBall
-   return newBall
-end arrow_AnimateBall
-
 function index_Reverse sIndex
    repeat for each line sLine in sIndex
       put sLine & CR before rIndex
@@ -124,19 +212,6 @@ function index_Reverse sIndex
    delete char - 1 of rIndex
    return rIndex
 end index_Reverse
-   
-on resizeControl
-   LayoutControl
-end resizeControl
-
-command LayoutControl pRect
-   if pRect is empty then put the rect of me into pRect
-   --
-   -- set the rect of me to pRect
-   --
-   put the arrow_Data of me into arrowData
-   set the arrow_PointLink of me to arrowData
-end LayoutControl
 
 
 --> Points
@@ -169,74 +244,33 @@ getprop arrow_PointsWidth
 end arrow_PointsWidth
 
 
---> Props | Compound
--
-getprop arrow_Data
-   set the customPropertySet of me to "arrow_Array"
-   put the customproperties of me into arrowData
-   set the customPropertySet of me to empty
-   return arrowData
-end arrow_Data
-
-getprop from_Items
-   put the from_Side of me into fItems
-   put the from_StepNum of me into item 2 of fItems
-   put the from_SliceNum of me into item 3 of fItems
-   return fItems
-end from_Items
-
-setprop from_Items [pFromName] fItems  
-   _NormaliseItems fItems
-   if the result is false then return empty
-   
-   set the from_Side of me to item 1 of fItems
-   set the from_StepNum of me to item 2 of fItems
-   set the from_SliceNum of me to item 3 of fItems
-   --
-   if pFromName is not empty then
-      set the from_Name of me to pFromName
-   end if
-   return fItems
-end from_Items
-
-getprop to_Items
-   put the to_Side of me into tItems
-   put the to_StepNum of me into item 2 of tItems
-   put the to_SliceNum of me into item 3 of tItems
-   return tItems
-end to_Items
-
-setprop to_Items [pToName] tItems
-   _NormaliseItems tItems
-   if the result is false then return empty
-   
-   set the to_Side of me to item 1 of tItems
-   set the to_StepNum of me to item 2 of tItems
-   set the to_SliceNum of me to item 3 of tItems
-   --
-   if pToName is not empty then
-      set the to_Name of me to pToName
-   end if
-   return tItems
-end to_Items
-
-
 --> Props | From
 -
 getprop from_Side
-   return the arrow_Array ["from_Side"] of me
+   put the arrow_Array ["from_Side"] of me into sSide
+   if stepNum is empty then
+      return "right"
+   else
+      return sSide
+   end if
 end from_Side
 
 setprop from_Side fSide
    _NormaliseItems fSide
-   if the result is false then return empty
-   put item 1 of fSide into fSide
+   if the result is false then return false
    
+   put item 1 of fSide into fSide
    set the arrow_Array ["from_Side"] of me to fSide
+   return true
 end from_Side
 
 getprop from_StepNum
-   return the arrow_Array ["from_StepNum"] of me
+   put the arrow_Array ["from_StepNum"] of me into stepNum
+   if stepNum is empty then
+      return 1
+   else
+      return stepNum
+   end if
 end from_StepNum
 
 setprop from_StepNum stepNum
@@ -244,7 +278,12 @@ setprop from_StepNum stepNum
 end from_StepNum
 
 getprop from_SliceNum
-   return the arrow_Array ["from_SliceNum"] of me
+   put the arrow_Array ["from_SliceNum"] of me into sliceNum
+   if sliceNum is empty then
+      return 2
+   else
+      return sliceNum
+   end if
 end from_SliceNum
 
 setprop from_SliceNum sliceNum
@@ -255,7 +294,12 @@ end from_SliceNum
 --> Props | To
 -
 getprop to_Side
-   return the arrow_Array ["to_Side"] of me
+   put the arrow_Array ["to_Side"] of me into sSide
+   if stepNum is empty then
+      return "left"
+   else
+      return sSide
+   end if
 end to_Side
 
 setprop to_Side toSide
@@ -267,7 +311,12 @@ setprop to_Side toSide
 end to_Side
 
 getprop to_StepNum
-   return the arrow_Array ["to_StepNum"] of me
+   put the arrow_Array ["to_StepNum"] of me into stepNum
+   if stepNum is empty then
+      return 1
+   else
+      return sliceNum
+   end if
 end to_StepNum
 
 setprop to_StepNum stepNum
@@ -275,7 +324,12 @@ setprop to_StepNum stepNum
 end to_StepNum
 
 getprop to_SliceNum
-   return the arrow_Array ["to_SliceNum"] of me
+   put the arrow_Array ["to_SliceNum"] of me into sliceNum
+   if sliceNum is empty then
+      return 2
+   else
+      return sliceNum
+   end if
 end to_SliceNum
 
 setprop to_SliceNum sliceNum
