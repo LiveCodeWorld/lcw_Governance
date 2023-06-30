@@ -108,16 +108,20 @@ end grid_EditDisplayLine
 -
 on ask_ExportModuleData vObject, pDisplayModel
    put the displayed_Data of vObject into displayedData
-   put the view_ModelName of vObject into modelName
-   put lcw_Ask ("What name would you like for this model?", modelName) into modelName
-   put modelName into displayedData ["title"]
    --
-   -- module_SetModel shortName, moduleStackName, projectName, displayedData
+   put displayedData ["modelName"] into modelName
+   if modelName is empty then
+      put the view_ModelName of vObject into modelName
+   end if
+   --
+   put lcw_Ask ("What name would you like for this model?", modelName) into modelName
+   put modelName into displayedData ["modelName"]
+   --
    set the module_Model [modelName] of vObject to displayedData
    put the result into modeFile
    --
-   if pDisplayModel is treu then
-      display_ModuleModel vObject
+   if pDisplayModel is true then
+      display_ModuleModel vObject, modelName
    end if
    --
    return sData

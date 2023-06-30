@@ -24,22 +24,27 @@ getprop menu_Target [tObject]
       if exists (dView) is false then return empty
       put the displayed_Object of dView into ixView
    end if
-   --
-   put the displayed_Data of ixView into vData
-   put vData into LocalArray ["displayed_Data"]
-   --
-   put the displayed_AbbreviatedData of ixView into aData
-   put aData into LocalArray ["displayed_AbbreviatedData"]
-   --
-   put the view_ModelName of ixView into vName
-   put the saved_Data [vName] of ixView into savedData
-   put savedData into LocalArray ["saved_Data"]
-   --
-   put the module_ModelNames of ixView into modelNames
-   put modelNames into LocalArray ["module_ModelNames"]
-   --
    return ixView
 end menu_Target
+
+getprop disabled_LinkChart [ixView]
+   return true
+end disabled_LinkChart
+
+getprop disabled_DisplayChart [ixView]
+   return true
+end disabled_DisplayChart
+
+getprop checked_ShowHeaders [ixView]
+   put the data_Grid of ixView into dGrid
+   put the dgProp["show header"] of dGrid into showHeader
+   return showHeader
+end checked_ShowHeaders
+
+getprop checked_ShowTotal [ixView]
+   put the show_Total of ixView into sBoolean
+   return sBoolean
+end checked_ShowTotal
 
 getprop checked_ShowName [ixView]
    put the showname of ixView into sBoolean
@@ -57,35 +62,93 @@ getprop checked_ShowButton [ixView]
 end checked_ShowButton
 
 getprop display_Param [ixView]
-   return the display_Format of ixView
+   return the displayed_Column of ixView
 end display_Param
 
-getprop display_Params
-   return _Formats()
+getprop display_Params [ixView]
+   -- return "Budget,Income,Shards,-,All"
+   put the column_Names of ixView into cNames
+   line_Delete "Title", cNames
+   replace CR with comma in cNames
+   return cNames & ",-,All,None" 
 end display_Params
 
-private function _Formats
+getprop displayFormat_Param [ixView]
+   return the display_Format of ixView
+end displayFormat_Param
+
+getprop displayFormat_Params
    return "short,abbreviated,number"
-end _Formats
+end displayFormat_Params
+
+getprop setCurrency_Param [ixView]
+   put the currency_Symbol of ixView into cSymbol
+   return cSymbol
+end setCurrency_Param
+
+getprop setCurrency_Params
+   return "£,$,€"
+end setCurrency_Params
 
 
 --> Global | IxOS | Menu
 -
-on menu_Display ixView, someHow
-   set the display_Format of ixView to someHow
-end menu_Display
+on menu_SetIncome ixView
+   put the view_ModelName of ixView into pModelName
+   --
+   put the total_Budget of ixView into sIncome
+   put lcw_Ask ("Enter a total income for this project...", sIncome, "Income", ixView) into sIncome
+   set the total_Budget [pModelName] of ixView to sIncome
+   put the result into vData
+   --
+   display_Data vData, "vData", pModelName
+end menu_SetIncome
+
+on submenu_ModuleData
+   return "Global | Module | Model | Menu"
+end submenu_ModuleData
 
 private on _
 end _
 
-on menu_Rename ixView
-   put the short name of ixView into ixName
-   put lcw_Ask ("Rename this view...", ixName, "Rename", ixView) into newName
-   set the name of newName to newName
-end menu_Rename
+on menu_Display ixView, cName
+   set the displayed_Column of ixView to cName
+end menu_Display
+
+on menu_DisplayFormat ixView, someHow
+   set the display_Format of ixView to someHow
+end menu_DisplayFormat
 
 private on __
 end __
+
+on menu_SetCurrency ixView, cSymbol
+   put the ix_View of ixView into ixView
+   set the currency_Symbol of ixView to cSymbol
+end menu_SetCurrency
+
+on menu_SetMargin ixView
+   put the inner_Margin of ixView into iMargin
+   put lcw_Ask("Set the inner_Margin...", iMargin, "inner_Margin", ixView) into iMargin
+   set the inner_Margin of ixView to iMargin
+end menu_SetMargin
+
+on menu_BackgroundColour ixView
+   put the backgroundColor of ixView into startingColor
+   answer color with startingColor
+   put it into sColour
+   if sColour is empty then return false
+   
+   set the background_Colour of ixView to sColour
+end menu_BackgroundColour
+
+private on ___
+end ___
+
+on menu_ShowTotal ixView
+   put the show_Total of ixView into sBoolean
+   set the show_Total of ixView to (sBoolean is false)
+end menu_ShowTotal
 
 on menu_ShowMenu ixView
    put the show_Menu of ixView into sBoolean
@@ -97,39 +160,15 @@ on menu_ShowButton ixView
    set the show_Button of ixView to (sBoolean is false)
 end menu_ShowButton
 
-private on ___
-end ___
-
-on submenu_Chart
-   return "Global | IxOS | Chart | Menu"
-end submenu_Chart
-
-on submenu_DisplayChart
-   return "Global | IxOS | Chart | Display | Menu"
-end submenu_DisplayChart
-
-on submenu_LinkChart
-   return "Global | IxOS | Chart | Create | Menu"
-end submenu_LinkChart
-
-getprop checked_NameLinked [ixView]
-   put the name_Linked of ixView into sBoolean
-   return sBoolean is true
-end checked_NameLinked
+on menu_ShowHeaders ixView
+   put the data_Grid of ixView into dGrid
+   --
+   put the dgProp["show header"] of dGrid into showHeader
+   set the dgProp["show header"] of dGrid to (showHeader is false)
+end menu_ShowHeaders
 
 private on ____
 end ____
-
-on menu_SetIncome ixView
-   put the view_ModelName of ixView into pModelName
-   --
-   put the total_Budget of ixView into sIncome
-   put lcw_Ask ("Enter a total income for this project...", sIncome, "Income", ixView) into sIncome
-   set the total_Budget [pModelName] of ixView to sIncome
-   put the result into vData
-   --
-   display_Data vData, "vData", pModelName
-end menu_SetIncome
 
 on menu_MouseUpCommand ixView
    put the mouse_Up of ixView into mUp
@@ -143,36 +182,48 @@ on menu_MouseDoubleUpCommand ixView
    set the mouse_DoubleUp of ixView to mDoubleUp
 end menu_MouseDoubleUpCommand
 
-on menu_SetMargin ixView
-   put the inner_Margin of ixView into iMargin
-   put lcw_Ask("Set the inner_Margin...", iMargin, "inner_Margin", ixView) into iMargin
-   set the inner_Margin of ixView to iMargin
-end menu_SetMargin
-
-private command _____
+private on _____
 end _____
 
-on menu_SaveData ixView
-   dispatch "save_Data" to ixView
-   get the result
-   --
-   put the displayed_Data [true] of ixView into testData
-   display_Data testData, mName, "displayed_Data"
-end menu_SaveData
+on submenu_Chart
+   return "Global | IxOS | Chart | Menu"
+end submenu_Chart
 
-on menu_ClearData ixView
-   dispatch "clear_Data" to ixView
-   set the displayed_Data of ixView to empty
-end menu_ClearData
+on submenu_LinkChart
+   return "Global | IxOS | Chart | Create | Menu"
+end submenu_LinkChart
 
-on submenu_ModuleData
-   return "Global | Module | Model | Menu"
-end submenu_ModuleData
+on submenu_DisplayChart
+   return "Global | IxOS | Chart | Display | Menu"
+end submenu_DisplayChart
 
 private on ______
 end ______
 
+on menu_RefreshDataGrid ixView
+   put the data_Grid of ixView into dGrid
+   --
+   dispatch "RefreshList" to dGrid
+   dispatch "LayoutControl" to ixView
+end menu_RefreshDataGrid
+
+on menu_TidyTabStops ixView
+   put the data_Grid of ixView into dGrid
+   --
+   put the width of dGrid &CR& the dgFormattedWidth of dGrid
+   put the dgProp["column widths"] of dGrid into cWidths
+   --
+   -- put the dgProp["allow column resizing"] of group "Data Grid"
+   -- put the dgProp["column labels"] of group "Data Grid"
+   -- put the dgProp["columns"] of group "Data Grid"
+   -- put the dgColumnIsResizable["col1"] of group "Data Grid"
+   -- put the dgColumnWidth["col1"] of group "Data Grid"
+   -- put the dgFormattedWidth of group "DataGrid"
+   -- put the dgFormattedHeight of group "DataGrid"
+   -- put the dgProp["scrollbar width"] of group "Data Grid"
+   -- put the dgProp["visible columns"] of group "Data Grid"
+end menu_TidyTabStops
+
 on submenu_Test
    return "Global | IxOS | Test | Menu"
 end submenu_Test
-

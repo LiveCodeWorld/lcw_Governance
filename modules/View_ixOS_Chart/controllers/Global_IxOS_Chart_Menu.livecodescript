@@ -158,4 +158,3 @@ on menu_ChartOptions chartWidget
    --
    display_Data cOptionsData, cTitle, "chart_OptionsData"
 end menu_ChartOptions
-

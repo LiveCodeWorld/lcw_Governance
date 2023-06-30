@@ -14,53 +14,156 @@ local LocalArray
 
 --> Working on
 -
-getprop name_Linked
-   _SetNamedObjects empty, ixView, chartWidget
+on display_Update
+   -- assume that ixView dispatches this
+   update_Chart
+end display_Update
+
+on update_Chart
+   put _IxView() into ixView
+   put _ChartWidget() into chartWidget
+   put the displayed_Column of ixView into cName
+   --
+   lock screen
+   put the chart_Data [cName] of ixView into chartData
+   set the displayed_Data of chartWidget to chartData
+   unlock screen
+end update_Chart
+
+getprop column_Names
+   put the column_Names of _IxView() into cNames
+   return cNames
+end column_Names
+
+getprop displayed_Column
+   if the long id of the target is not the long id of me then pass displayed_Column
+   --
+   return the displayed_Column of _IxView()
+end displayed_Column
+
+setprop displayed_Column cName
+   if the long id of the target is not the long id of me then pass displayed_Column
+   put _ChartWidget() into chartWidget
+   put _IxView() into ixView
+   
+   lock screen
+   set the displayed_Column of ixView to cName
+   put the chart_Data [cName] of ixView into chartData
+   set the displayed_Data of chartWidget to chartData
+   unlock screen
+   --
    return the result
-end name_Linked
+end displayed_Column
 
-on nameChanged pOldName, pNewName
-   _SetNamedObjects pOldName, ixView, chartWidget
-   if the result is true then
-      _SetNames pNewName, ixName, chartName
-      --
-      set the lockmessages to true
-      set the name of ixView to ixName
-      set the name of chartWidget to chartName
-      set the lockmessages to false
-   end if
-end namechanged
+getprop displayed_Data [cName]
+   put _IxView() into ixView
+   put the displayed_Data of ixView into sTableData 
+   return sTableData
+end displayed_Data
 
-private command _SetNamedObjects pGraphicName, @ixView, @chartWidget
-   _SetNames pGraphicName, ixName, chartName
+setprop displayed_Data [cName] sTableData
+   put _IxView() into ixView
+   put _ChartWidget() into chartWidget
    --
-   if exists (widget chartName) then
-      put the long id of widget chartName into chartWidget
+   lock screen
+   set the displayed_Data [cName] of ixView to sTableData
+   put the chart_Data [cName] of ixView into chartData
+   set the displayed_Data of chartWidget to chartData
+   unlock screen
+   --   
+   return ixView
+end displayed_Data
+
+getprop side_BySide
+   put the uOPN ["side_BySide"] of me into sideBySide
+   return sideBySide is not false
+end side_BySide
+
+setprop side_BySide sBoolean
+   set the uOPN ["side_BySide"] of me to sBoolean
+   --
+   lock screen
+   put _ChartWidget() into chartWidget
+   if sBoolean is true then
+      set the visible of chartWidget to true
+      set the visible of _IxView() to true
+      set the showLegend of chartWidget to false
    else
-      put empty into chartWidget
-   end if
-   
-   if exists (group ixName) then
-      put the long id of group ixName into ixView
-   else
-      put empty into ixView      
+      set the visible of chartWidget to false
+      set the visible of _IxView() to true
+      set the showLegend of chartWidget to true
    end if
    --
-   return (ixView is not empty) AND (chartWidget is not empty)
-end _SetNamedObjects
+   LayoutControl
+   unlock screen
+end side_BySide
 
-private command _SetNames pGraphicName, @ixName, @chartName
-   if pGraphicName is empty then
-      put the short name of me into pGraphicName -- "View|ixOS|Slice"
+getprop inner_Margin
+   put the uOPN ["inner_Margin"] of me into sMargin
+   if sMargin is empty then
+      return 20
+   else
+      return sMargin
    end if
-   
-   set the itemDelimiter to "|"
+end inner_Margin
+
+setprop inner_Margin sMargin
+   set the uOPN ["inner_Margin"] of me to sMargin
+   LayoutControl
+end inner_Margin
+
+getprop chart_IsVisible
+   put the visible of _ChartWidget() into sBoolean
+   return sBoolean
+end chart_IsVisible
+
+setprop chart_IsVisible sBoolean
+   put _ChartWidget() into chartWidget
    --
-   put item 1 to -2 pGraphicName into ixName
-   put ixName & "|Chart" into chartName
+   lock screen
+   set the visible of chartWidget to sBoolean
+   set the visible of _IxView() to (sBoolean is false)
    --
-   return pGraphicName
-end _SetNames
+   -- put the showLegend of chartWidget into sBoolean
+   set the showLegend of chartWidget to sBoolean
+   unlock screen
+end chart_IsVisible
+
+
+--> Events
+-
+on mouseDoubleUp pButtonNumber
+   put the side_BySide of me into sideBySide
+   if sideBySide is true then
+      pass mouseDoubleUp
+   else
+      put the chart_IsVisible of me into sBoolean
+      set the chart_IsVisible of me to (sBoolean is false)
+   end if
+end mouseDoubleUp
+
+on mouseDown pButtonNumber
+   --  LayoutControl
+   switch pButtonNumber
+      case 3
+         menu_PopUp "Global | IxOS | Slice | Menu"
+         break
+      default
+         if the shiftKey is "Down" then
+            grab me
+         else
+            pass mouseDown
+         end if
+   end switch
+end mouseDown
+
+on mouseMove
+   if the mouse is "Down" then
+      try -- being grabbed
+         LayoutControl
+      end try
+   end if
+end mouseMove
 
 
 --> Colour
@@ -125,47 +228,59 @@ getprop chart_Rect
    return chartRect
 end chart_Rect
 
-private command _SetRects pRect, @ixRect, @chartRect
+private command _SetRects pRect, @ixRect, @chartRect, sideBySide
    put pRect into innerRect
+   --
    put the inner_Margin of me into innerMargin
    rect_SubtractMargins innerRect, innerMargin
    --
-   put item 3 of innerRect - item 1 of innerRect into innerWidth
-   put (innerWidth - innerMargin) / 2 into halfWidth
-   
-   put innerRect into ixRect
-   put item 1 of ixRect + halfWidth into ixRight
-   put ixRight into item 3 of ixRect
-   --
-   put innerRect into chartRect
-   put item 3 of chartRect - halfWidth into chartLeft
-   put chartLeft into item 1 of chartRect
-   --
+   switch
+      case sideBySide is false
+         put innerRect into ixRect
+         put innerRect into chartRect
+         break
+      case sideBySide = "half"
+         put item 3 of innerRect - item 1 of innerRect into innerWidth
+         put (innerWidth - innerMargin) / 2 into halfWidth
+         
+         put innerRect into ixRect
+         put item 1 of ixRect + halfWidth into ixRight
+         put ixRight into item 3 of ixRect
+         --
+         put innerRect into chartRect
+         put item 3 of chartRect - halfWidth into chartLeft
+         put chartLeft into item 1 of chartRect
+         break
+      default
+         put item 4 of innerRect - item 2 of innerRect into innerHeight
+         --
+         put innerRect into chartRect
+         put item 3 of chartRect - innerHeight into chartLeft
+         put chartLeft into item 1 of chartRect
+         
+         put innerRect into ixRect
+         put chartLeft - (2 * innerMargin) into ixRight
+         put ixRight into item 3 of ixRect
+   end switch
    return innerRect
 end _SetRects
 
-getprop inner_Margin
-   return 40
-end inner_Margin
-
 command LayoutControl pRect
-   if pRect is not a rect then
-      put the rect of me into pRect
-   else
-      set the rect of me to pRect
-   end if
+   if pRect is not a rect then put the rect of me into pRect
+   put the margins of me into myMargins
+   rect_SubtractMargins pRect, myMargins
    
    # Geometry
-   _SetRects pRect, ixRect, chartRect
-   put the result into innerRect
+   put the side_BySide of me into sideBySide
+   _SetRects pRect, ixRect, chartRect, sideBySide
+   put the result into frameRect
    
    # Set Rects
-   _SetNamedObjects empty, ixView, chartWidget
-   if exists (ixView) then set the rect of ixView to ixRect
+   set the rect of _SliceBackground() to pRect
+   set the rect of _IxView() to ixRect
+   set the rect of _ChartWidget() to chartRect
    --
-   if exists (chartWidget) then set the rect of chartWidget to chartRect
-   --
-   return innerRect
+   return frameRect
 end LayoutControl
 
 command LayoutControl pRect
@@ -201,37 +316,15 @@ command LayoutControl pRect
 end LayoutControl
 
 
---> Events
--
-on mouseDown pButtonNumber
-   --  LayoutControl
-   switch pButtonNumber
-      case 3
-         menu_PopUp "Global | IxOS | Slice | Menu"
-         break
-      default
-         if the shiftKey is "Down" then
-            grab me
-         else
-            pass mouseDown
-         end if
-   end switch
-end mouseDown
-
-on mouseMove
-   if the mouse is "Down" then
-      try -- being grabbed
-         LayoutControl
-      end try
-   end if
-end mouseMove
-
-
 --> Objects
 -
 getprop chart_Widget
    return _ChartWidget()
 end chart_Widget
+
+getprop ix_View
+   return _IxView()
+end ix_View
 
 getprop slice_View
    return the long id of me
@@ -242,13 +335,58 @@ getprop view_Object
 end view_Object
 
 private function _IxView
-   _SetNames graphicName, ixName, chartName
-   if exists (group ixName) is false then return empty
-   return the long id of group ixName
+   return the long id of group 1 of me
 end _IxView
 
+private function _SliceBackground
+   return the long id of grc "Slice Background" of me
+end _SliceBackground
+
 private function _ChartWidget
-   _SetNames graphicName, ixName, chartName
-   if exists (widget chartName) is false then return empty
-   return the long id of widget chartName
+   return the long id of widget "Slice Chart" of me
 end _ChartWidget
+
+
+--> Deps
+-
+command rect_SubtractMargins @someRect, pMargin
+   margin_Normalize pMargin, leftM, topM, rightM, bottomM   
+   add leftM to item 1 of someRect
+   add topM to item 2 of someRect
+   subtract rightM from item 3 of someRect
+   subtract bottomM from item 4 of someRect
+end rect_SubtractMargins
+
+command margin_Normalize @someMargin, @leftM, @topM, @rightM, @bottomM
+   if the number of items of someMargin < 4 then
+      put item 1 of someMargin into defaultMargin
+      put defaultMargin into leftM
+      
+      put item 2 of someMargin into actualMargin
+      if actualMargin is empty then
+         put leftM into topM
+      else
+         put actualMargin into topM
+      end if
+      
+      put item 3 of someMargin into actualMargin
+      if actualMargin is empty then
+         put leftM into rightM
+      else
+         put actualMargin into rightM
+      end if
+      
+      put item 4 of someMargin into actualMargin
+      if actualMargin is empty then
+         put topM into bottomM
+      else
+         put actualMargin into bottomM
+      end if
+   else
+      put item 1 of someMargin into leftM
+      put item 2 of someMargin into topM
+      put item 3 of someMargin into rightM
+      put item 4 of someMargin into bottomM
+   end if
+   put leftM,topM,rightM,bottomM into someMargin
+end margin_Normalize

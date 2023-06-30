@@ -10,10 +10,7 @@ version: 0.1
 /*
 Here you make make notes as a basic form of help for this view.
 Full help text can be found on the linked wiki for the view.
-*/
 
---> Working on
--
 getprop name_Linked
    _SetNamedObjects empty, ixView, chartWidget
    return the result
@@ -62,9 +59,6 @@ private command _SetNames pChartName, @ixName, @graphicName
    return pChartName
 end _SetNames
 
-
---> Events
--
 on moveControl
    put _IxView() into ixView
    if ixView is empty then pass moveControl
@@ -72,7 +66,14 @@ on moveControl
    put the loc of me into vLoc
    set the centre_Loc of ixView to vLoc
 end moveControl
+*/
 
+--> Working on
+-
+
+
+--> Events
+-
 on resizeControl
    put the rect of me into viewRect
    LayoutControl viewRect
@@ -102,21 +103,38 @@ getprop chart_OptionsData
 end chart_OptionsData
 
 getprop chart_Data
-   put the chartJSONData of me into pJSON
-   put json_ToArray (pJSON) into cData
-   return cData
+   return _GetChartData()
 end chart_Data
 
+setprop chart_Data
+   _SetChartData cData
+   return the result
+end chart_Data
+
+getprop chart_CSV
+   return the csvData of me
+end chart_CSV
+
+setprop chart_CSV chartCSV
+   set the csvData of me to chartCSV
+end chart_CSV
+   
 getprop displayed_Data
-   put the csvData of me into sData
+   put _GetChartData() into sData ["chart_Data"]
+   put the model_Name of me into sData ["modelName"]
+   --
    return sData
 end displayed_Data
 
-setprop displayed_Data sData
-   set the csvData of me to sData
+setprop displayed_Data [modelName] sData
+   put sData ["chart_Data"] into cData
+   _SetChartData cData
+   --
+   set the model_Name of me to modelName
+   return the result
 end displayed_Data
 
-getprop show_Scale
+getprop show_Scale   
    put the showXScale of me into xBoolean
    put the showYScale of me into yBoolean
    return xBoolean AND yBoolean
@@ -128,6 +146,38 @@ setprop show_Scale sBoolean
    set the showYScale of me to sBoolean
    unlock screen
 end show_Scale
+
+getprop template_Object
+   -- in case it is nested as template card script is crude
+   return view_GetTemplateObject ("View|IxOs|Chart")
+end template_Object
+
+getprop model_Name
+   put the model_Name of me into modelName
+   if modelName is empty then
+      put the view_ModelName of me into modelName
+   end if
+   return modelName
+end model_Name
+   
+setprop model_Name modelName
+   set the model_Name of me to modelName
+end model_Name
+ 
+ 
+ --> Private
+ -
+private function _GetChartData
+   put the chartJSONData of me into cJSON
+   put json_ToArray (cJSON) into cData
+   return cData
+end _GetChartData
+
+private command _SetChartData cData
+   put json_FromArray (cData) into cJSON
+   set the chartJSONData of me to cJSON
+   return cJSON
+end _SetChartData
 
 
 --> Objects

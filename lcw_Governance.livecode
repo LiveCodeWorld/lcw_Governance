@@ -18,7 +18,7 @@ end project_Deps
 -
 command project_CustomInit
    -- go invisible stack "ixOS"
-   set the fullscreen of stack "ixOS" to true
+   -- set the fullscreen of stack "ixOS" to true
    go to stack "ixOS"
    -- set the visible of stack "ixOS" to true
 end project_CustomInit

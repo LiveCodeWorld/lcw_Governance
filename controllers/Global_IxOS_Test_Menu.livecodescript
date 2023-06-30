@@ -68,6 +68,32 @@ end displayed_Params
 
 --> Global | IxOS | Test | Menu
 -
+on menu_ClearIncome ixView
+   put the displayed_Data of ixView into sTableData
+   --
+   put sTableData ["vData"] into vData
+   repeat with itemNum = 1 to item 2 of the extents of vData
+      delete variable sTableData ["vData"][itemNum]["Income"]
+   end repeat
+   --
+   set the table_Data of ixView to sTableData
+end menu_ClearIncome
+
+on menu_Update ixView
+   lock screen
+   dispatch "update_ShardsAndIncome" to ixView
+   dispatch "update_Totals" to ixView
+   unlock screen
+end menu_Update
+
+on menu_Tabstops ixView
+   put the data_Grid of ixView into dGrid
+   put the dgProp["column widths"] of dGrid
+end menu_Tabstops
+
+private on _
+end _
+
 on menu_IxInspector ixView
    display_ObjectProperties ixView
 end menu_IxInspector
@@ -76,9 +102,6 @@ on menu_GridInspector ixView
    put the data_Grid of ixView into dView
    display_ObjectProperties dView
 end menu_GridInspector
-
-private on _
-end _
 
 on menu_IxBehavior ixView
    put the behavior of ixView into bObject
