@@ -276,9 +276,11 @@ command LayoutControl pRect
    put the result into frameRect
    
    # Set Rects
+   lock screen
    set the rect of _SliceBackground() to pRect
    set the rect of _IxView() to ixRect
    set the rect of _ChartWidget() to chartRect
+   unlock screen
    --
    return frameRect
 end LayoutControl

@@ -19,8 +19,17 @@ end project_Deps
 command project_CustomInit
    -- go invisible stack "ixOS"
    -- set the fullscreen of stack "ixOS" to true
-   go to stack "ixOS"
+   -- go to stack "ixOS"
    -- set the visible of stack "ixOS" to true
+   
+   /*
+   display_Project "lcw_Governance"
+   --
+   display_Project "lcw_Graph"
+   display_Project "lcw_Media"
+   */
+   
+   -- close stack "animationEngine"
 end project_CustomInit
 
 on preOpenStack 
