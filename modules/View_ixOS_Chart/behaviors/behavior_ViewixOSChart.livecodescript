@@ -106,7 +106,7 @@ getprop chart_Data
    return _GetChartData()
 end chart_Data
 
-setprop chart_Data
+setprop chart_Data cData
    _SetChartData cData
    return the result
 end chart_Data
@@ -122,15 +122,20 @@ end chart_CSV
 getprop displayed_Data
    put _GetChartData() into sData ["chart_Data"]
    put the model_Name of me into sData ["modelName"]
+   put the label of me into sData ["label"]
    --
    return sData
 end displayed_Data
 
 setprop displayed_Data [modelName] sData
    put sData ["chart_Data"] into cData
+   put sData ["label"] into cLabel
+   
+   lock screen
    _SetChartData cData
-   --
+   set the label of me to cLabel
    set the model_Name of me to modelName
+   unlock screen
    return the result
 end displayed_Data
 

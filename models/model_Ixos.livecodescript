@@ -125,7 +125,7 @@ getprop ix_LinkArray
          --
          put the displayed_Data of toView into dData
          put dData ["vData"] into vData
-         put array_IndexFind (vData, "title", fromName) into foundIndexNum
+         put indexArray_Find (vData, "title", fromName) into foundIndexNum
          if foundIndexNum > 0 then
             put the short name of toView into toName
             put foundIndexNum into ixLinkArray [fromName][toName]["indexNum"]

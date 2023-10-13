@@ -68,6 +68,17 @@ end displayed_Params
 
 --> Global | IxOS | Test | Menu
 -
+on menu_FormattedHeight ixView
+   put the formatted_Height of ixView into fHeight
+   get the height of ixView
+   --
+   put the rect of ixView into someRect
+   rect_SetHeight someRect, fHeight
+   set the rect of ixView to someRect
+   --
+   put fHeight & CR & it
+end menu_FormattedHeight
+
 on menu_ClearIncome ixView
    put the displayed_Data of ixView into sTableData
    --

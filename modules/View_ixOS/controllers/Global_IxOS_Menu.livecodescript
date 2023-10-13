@@ -207,23 +207,6 @@ on menu_RefreshDataGrid ixView
    dispatch "LayoutControl" to ixView
 end menu_RefreshDataGrid
 
-on menu_TidyTabStops ixView
-   put the data_Grid of ixView into dGrid
-   --
-   put the width of dGrid &CR& the dgFormattedWidth of dGrid
-   put the dgProp["column widths"] of dGrid into cWidths
-   --
-   -- put the dgProp["allow column resizing"] of group "Data Grid"
-   -- put the dgProp["column labels"] of group "Data Grid"
-   -- put the dgProp["columns"] of group "Data Grid"
-   -- put the dgColumnIsResizable["col1"] of group "Data Grid"
-   -- put the dgColumnWidth["col1"] of group "Data Grid"
-   -- put the dgFormattedWidth of group "DataGrid"
-   -- put the dgFormattedHeight of group "DataGrid"
-   -- put the dgProp["scrollbar width"] of group "Data Grid"
-   -- put the dgProp["visible columns"] of group "Data Grid"
-end menu_TidyTabStops
-
-on submenu_Test
+on submenu_Dev
    return "Global | IxOS | Test | Menu"
-end submenu_Test
+end submenu_Dev

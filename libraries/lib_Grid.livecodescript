@@ -182,6 +182,9 @@ getprop border_Loc [pItems]
       put 1 into stepNum
       put 2 into numOfSteps
    end if
+   if sBorder is empty then
+      put "top" into sBorder
+   end if
    --
    put 2 into yFiddle
    switch char 1 of sBorder

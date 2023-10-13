@@ -44,10 +44,6 @@ on menu_DisplayNestr
    display_Nestr
 end menu_DisplayNestr
    
-on menu_UpdateCharts cardObject
-   dispatch "ix_UpdateCardCharts" to cardObject
-end menu_UpdateCharts
-
 on menu_ChartsVisible cardObject
    put the charts_Visible of cardObject into sBoolean
    set the charts_Visible of cardObject to (sBoolean is false)

@@ -1,4 +1,4 @@
-﻿script "behavior_ViewixOS" with behavior "behavior_ViewixOSLinked"
+﻿script "behavior_ViewixOS"
 --> MetaData
 -
 copyright: David Bovill
@@ -44,6 +44,219 @@ end chart_CSV
 --> Variables
 -
 
+--> Working on
+-
+getprop title_Index [useVisible]
+   if useVisible is true then
+      put _GetVisibleData() into vData
+   else
+      put _GetSavedVisibleData() into vData
+   end if
+   --
+   repeat with lineNum = 1 to item 2 of the extents of vData
+      put vData [lineNum]["Title"] & CR after titleIndex
+   end repeat
+   delete char -1 of titleIndex
+   return titleIndex
+end title_Index
+
+getprop formatted_Height
+   put _Datagrid() into dGrid
+   put the dgFormattedHeight of dGrid into fHeight
+   
+   ## Add header Height
+   put the dgProp["header height"] of dGrid into hHeight
+   add hHeight to fHeight
+   
+   put the inner_Margin of me into iMargin
+   add 2 * iMargin to fHeight
+   --
+   if the visible of _MenuWidget() is true then
+      add 6 to fHeight
+   end if
+   
+   if _BottomShowing() is true then
+      add iMargin/2 to fHeight
+      
+      put 27 into totalHeight
+      -- put 32 into totalHeight
+      add totalHeight to fHeight
+   end if
+   
+   -- put _MenuRect (gridRect, pRect, iMargin) into mRect
+   add 4 to fHeight
+   return fHeight
+end formatted_Height
+
+
+--> Budget
+-
+getprop total_Budget
+   -- rename to "fair_Value" ?
+   put the total_Budget of me into totalBudget
+   return totalBudget
+end total_Budget
+
+setprop total_Budget totalBudget
+   -- rename to "fair_Value" ?
+   put the currency_Symbol of me into currencySymbol
+   set the total_Budget of me to totalBudget
+   --
+   put _GetSavedVisibleData() into vData
+   _ConstructShardsAndIncome vData, currencySymbol, totalBudget
+   _SetSavedVisibleData vData
+   return vData
+end total_Budget
+
+getprop total_BudgetFromSaved
+   put the saved_TableData of me into tableData
+   put tableData ["vData"] into vData
+   put ix_SumIncome (vData) into sTotal
+   return sTotal 
+end total_BudgetFromSaved
+
+setprop budget_Value [sTitle] longNum
+   put the currency_Symbol of me into currencySymbol
+   put _LongToAbbreviated (longNum, currencySymbol) into aNum
+   --
+   put _GetSavedVisibleData() into aData
+   repeat with lineNum = 1 to item 2 of the extents of aData
+      if aData [lineNum]["Title"] = sTitle then
+         put aNum into aData [lineNum]["Budget"]
+      end if
+   end repeat
+   --
+   _SetSavedVisibleData aData
+   --
+   set the display_Format of me to "abbreviated"
+   -- set the displayed_Data of me to aData 
+   return aData
+end budget_Value
+
+
+--> Budget | Increment
+-
+setprop budget_Increment [sTitle] aValue
+   put _GetSavedVisibleData() into vData
+   put indexArray_Find (vData, "Title", sTitle) into indexNum
+   --
+   if indexNum = 0 then
+      -- insert (could ignore)
+      put item 2 of the extents of vData into indexNum
+      add 1 to indexNum
+      put aValue into vData [indexNum]["Budget"]
+      put sTitle into vData [indexNum]["Title"]
+   else
+      _DuckNormalize aValue
+      put vData [indexNum]["Budget"] into bValue
+      add aValue to bValue
+      --
+      put bValue into vData [indexNum]["Budget"]
+   end if
+   _CloseUpdate vData
+   --
+   return indexNum
+end budget_Increment
+
+getprop budget_Value [sTitle]
+   put the data_Grid of me into dgView
+   --
+   put the title_IndexNum [sTitle] of me into indexNum
+   --
+   put the dgData of dgView into sData
+   put sData [indexNum]["budget"] into bValue
+   --
+   return bValue
+end budget_Value
+
+setprop budget_Value [sTitle] bValue
+   put _GetSavedVisibleData() into vData
+   put indexArray_Find (vData, "Title", sTitle) into indexNum
+   --
+   _DuckNormalize bValue
+   put bValue into vData [indexNum]["budget"]
+   if indexNum = 0 then
+      put sTitle into vData [indexNum]["name"]
+   end if
+   _CloseUpdate vData
+   --
+   return indexNum
+end budget_Value
+
+getprop title_IndexNum [sTitle]
+   put the data_Grid of me into dgView
+   dispatch "FindIndex" to dgView with "Title", sTitle
+   return the result
+end title_IndexNum
+
+private command _CloseUpdate vData
+   lock screen	
+   put _ConstructTableData (vData) into sTableData
+   put sTableData ["vData"] into vData
+   --
+   _SetSavedVisibleData vData
+   ix_UpdateTable vData
+   dispatch "slice_UpdateLinked" to the owner of me
+   --
+   unlock screen
+end _CloseUpdate
+
+on ix_UpdateTable pVisibleData
+   if pVisibleData is empty then
+      put _GetSavedVisibleData() into pVisibleData
+   end if
+   _DisplayVisibleData pVisibleData
+end ix_UpdateTable
+
+on ix_UpdateCardCharts cObject
+   if cObject is empty then
+      put the card_Object of the target into cObject
+   end if
+   --
+   put the ix_Views of cObject into ixViews
+   repeat for each line ixView in ixViews
+      dispatch "ix_UpdateLinkedCharts" to ixView
+   end repeat
+end ix_UpdateCardCharts
+
+
+--> Update | Linked
+-
+on ix_UpdateLinkedCharts
+   -- put the view_ModelName of me into cTitle
+   put the chart_Data of me into sData
+   put sData ["chart_Data"] into chartData
+   --
+   ## Add Chart Title
+   put the chart_Title of me into cTitle
+   -- put cTitle into chartData ["label"]
+   
+   put the linked_Charts of me into linkedCharts
+   repeat for each line chartWidget in linkedCharts
+      if exists (chartWidget) is false then next repeat
+      --
+      lock screen
+      set the chart_Data of chartWidget to chartData
+      set the title of chartWidget to cTitle
+      unlock screen
+   end repeat
+end ix_UpdateLinkedCharts
+
+on ix_UpdateLinkedFields
+   put the short name of me into fromName
+   put the ix_LinkArray of me into ixLinkArray
+   put the total_Budget of me into totalBudget
+   --
+   put ixLinkArray [fromName] into toArray
+   repeat for each key toName in toArray
+      put toArray [toName]["indexNum"] into indexNum
+      put toArray [toName]["toView"] into toView
+      --
+      set the cash_Value [indexNum] of toView to totalBudget
+   end repeat
+end ix_UpdateLinkedFields
+
+
 --> Names | Use
 -
 getprop column_Names
@@ -87,20 +300,8 @@ on CloseFieldEditor pFieldEditor
          put vData [lineNum][sTitle] into longValue
          put longValue into vData [lineNum][sTitle]
    end switch
-   
-   lock screen	
-   put _ConstructTableData (vData) into sTableData
-   put sTableData ["vData"] into vData
    --
-   _DisplayVisibleData vData
-   _SetSavedVisibleData vData
-   
-   ## After update  saving
-   ix_UpdateLinkedFields
-   -- ix_UpdateLinkedCharts
-   ix_UpdateCardCharts
-   --
-   unlock screen
+   _CloseUpdate vData
 end CloseFieldEditor
 
 
@@ -169,10 +370,6 @@ But the default works and stores it as a custom property.
 Remember to save the stack, if you  want the value to perrsist
 */
 
-getprop reconstructed_Data
-   
-end reconstructed_Data
-
 getprop displayed_Data
    -- put the saved_TableData of me into sTableData
    put _GetVisibleData() into vData
@@ -193,7 +390,7 @@ setprop displayed_Data [cName] sTableData
    put the result into recalculatedTableData
    set the displayed_Column of me to cName
    --
-   dispatch "display_Update" to the owner of me
+   dispatch "slice_UpdateChart" to the owner of me
    unlock screen
    --
    return recalculatedTableData
@@ -238,7 +435,7 @@ setprop displayed_Column cName
    end switch
    --
    _SetFirstColumnWidth
-   dispatch "display_Update" to the owner of me
+   dispatch "slice_UpdateChart" to the owner of me
    unlock screen
    --
    return dGrid
@@ -408,7 +605,6 @@ private command _AllChartData @sData, sectorNum, vData, sLabel
    end repeat
 end _AllChartData
 
-
 on update_ShardsAndIncome
    put the displayed_Data of me into sTableData
    set the displayed_Data of me to sTableData
@@ -438,6 +634,7 @@ private command _StripEmptyData @sData
    put cleanArray into sData
    return sData
 end _StripEmptyData
+
 private function _GetVisibleData
    put the dgData of _Datagrid() into vData
    _StripEmptyData vData
@@ -551,48 +748,6 @@ private function _ConstructSimpleTable longVisibleData
    --
    return sTableData
 end _ConstructSimpleTable
-
-
---> Budget
--
-getprop total_Budget
-   put the total_Budget of me into totalBudget
-   return totalBudget
-end total_Budget
-
-setprop total_Budget totalBudget
-   put the currency_Symbol of me into currencySymbol
-   set the total_Budget of me to totalBudget
-   --
-   put _GetSavedVisibleData() into vData
-   _ConstructShardsAndIncome vData, currencySymbol, totalBudget
-   _SetSavedVisibleData vData
-   return vData
-end total_Budget
-
-getprop total_BudgetFromSaved
-   put the saved_TableData of me into tableData
-   put tableData ["vData"] into vData
-   put ix_SumIncome (vData) into sTotal
-   return sTotal 
-end total_BudgetFromSaved
-
-setprop budget_Value [sTitle] longNum
-   put the currency_Symbol of me into currencySymbol
-   put _LongToAbbreviated (longNum, currencySymbol) into aNum
-   --
-   put _GetSavedVisibleData() into aData
-   repeat with lineNum = 1 to item 2 of the extents of aData
-      if aData [lineNum]["Title"] = sTitle then
-         put aNum into aData [lineNum]["Budget"]
-      end if
-   end repeat
-   --
-   _SetSavedVisibleData aData
-   set the display_Format of me to "abbreviated"
-   -- set the displayed_Data of me to aData 
-   return aData
-end budget_Value
 
 
 --> Display
@@ -932,10 +1087,13 @@ end selectionChanged
 on mouseDown pButtonNumber
    switch pButtonNumber
       case 3
-         menu_PopUp "Global | IxOS | Menu"
+         if the dgControl of the target is empty then
+            menu_PopUp "Global | IxOS | Menu"
+         else
+            menu_PopUp "Global | ixOS | Row | Menu"
+         end if
          break
       default
-         -- _MaybeGrab
          pass mouseDown
    end switch
 end mouseDown
@@ -1399,40 +1557,6 @@ function ix_SumIncome vData
    end repeat
    return sTotal
 end ix_SumIncome
-
-
---> Update | Linked
--
-on ix_UpdateLinkedFields
-   put the short name of me into fromName
-   put the ix_LinkArray of me into ixLinkArray
-   put the total_Budget of me into totalBudget
-   --
-   put ixLinkArray [fromName] into toArray
-   repeat for each key toName in toArray
-      put toArray [toName]["indexNum"] into indexNum
-      put toArray [toName]["toView"] into toView
-      --
-      set the cash_Value [indexNum] of toView to totalBudget
-   end repeat
-end ix_UpdateLinkedFields
-
-on ix_UpdateLinkedCharts
-   breakpoint
-   put the view_ModelName of me into cTitle
-   -- put the shard_CsvData of me into someCSV
-   put _GetVisibleData() into vData
-   --
-   put the linked_Charts of me into linkedCharts
-   repeat for each line chartWidget in linkedCharts
-      if exists (chartWidget) is false then next repeat
-      --
-      lock screen
-      set the displayed_Data of chartWidget to vData
-      set the title of chartWidget to cTitle
-      unlock screen
-   end repeat
-end ix_UpdateLinkedCharts
 
 
 --> Ix | Formmat
