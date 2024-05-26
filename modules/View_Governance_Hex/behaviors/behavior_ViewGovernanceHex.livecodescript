@@ -11,6 +11,12 @@ version: 0.1
 Full help text can be found on the linked wiki for the view.*/
 
 
+--> Variables
+-
+local Stop_Flag
+local Angle_Step = 3
+
+
 --> Working on
 -
 private command _NodeClick tName
@@ -270,12 +276,6 @@ command reset_Layout
    put true into Stop_Flag
    unlock screen
 end reset_Layout
-
-
---> Variables
--
-local Stop_Flag
-local Angle_Step = 3
 
 
 --> Working on
