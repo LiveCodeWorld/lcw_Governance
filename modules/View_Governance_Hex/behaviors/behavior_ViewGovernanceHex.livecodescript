@@ -19,6 +19,33 @@ local Angle_Step = 3
 
 --> Working on
 -
+function js_WikiInternal pageTitle, pWikiDomain
+   if pageTitle is empty then put "About Frame Plugin" into pageTitle
+   --
+   put "window.parent.postMessage({action:'doInternalLink'," into sJavascript
+   put "title: '[[pageTitle]]'," after sJavascript
+   --
+   if pWikiDomain is not empty then
+      -- site: "wiki.dbbs.co",
+      put "site: '[[pWikiDomain]]'," after sJavascript
+   end if
+   --
+   put "keepLineup: event.shiftKey" after sJavascript
+   put "}, '*');"  after sJavascript
+   --
+   replace "'" with quote in sJavascript
+   return merge (sJavascript)
+end js_WikiInternal
+
+command _OpenWikiPage nodeName
+   if the platform is "web" then
+      put js_WikiInternal (nodeName) into sJavascript
+      do sJavascript as "Javascript"
+   end if
+   --
+   _SetLabel nodeName
+end _OpenWikiPage
+
 private command _NodeClick tName
    put word -1 of tName into nodeNum
    put _NodeName (nodeNum) into nodeName
@@ -67,6 +94,54 @@ private command _NodeClick tName
    end switch
 end _NodeClick
 
+
+--> Events
+-
+on preopenControl
+   reset_Layout
+end preopenControl
+
+on resizeControl
+   put the rect of me into viewRect
+   LayoutControl viewRect
+end resizeControl
+
+on mouseEnter
+   set the idlerate to 20
+end mouseEnter
+
+on mouseLeave
+   set the idlerate to 200
+end mouseLeave
+
+on mouseDoubleUp
+   reset_Layout
+   
+   if the platform is "web" then
+   else
+      edit the script of me
+   end if
+end mouseDoubleUp
+
+on mouseDown
+   if "animationEngine" is among the lines of the stacksinuse then
+      animate_Gradient
+   else
+      --_SetLabel _NoText()
+   end if
+end mouseDown
+
+on mouseUp
+   put the short name of the target into tName  
+   switch tName
+      case "Hexagon"
+         _HexClick
+         put Stop_Flag is false into Stop_Flag
+         break
+      default
+         _NodeClick tName
+   end switch
+end mouseUp
 
 --> Props
 -
@@ -231,23 +306,9 @@ command animate_ToCentre pDuration, pMethod
    aeUnlockMoves
 end animate_ToCentre
 
-command _OpenWikiPage nodeName
-   if the platform is "web" then
-      put _TestJavasceipt (nodeName) into sJavascript
-      do sJavascript as "Javascript"
-   end if
-   --
-   _SetLabel nodeName
-end _OpenWikiPage
-
 
 --> Layout
 -
-on resizeControl
-   put the rect of me into viewRect
-   LayoutControl viewRect
-end resizeControl
-
 command LayoutControl pRect
    if pRect is empty then put the rect of me into pRect
    put _HexGraphic() into hexGraphic
@@ -301,48 +362,12 @@ getprop centre_Rect
    return nodeRect
 end centre_Rect
 
---> Events
+
+--> Private
 -
-on mouseEnter
-   set the idlerate to 20
-end mouseEnter
-
-on mouseLeave
-   set the idlerate to 200
-end mouseLeave
-
-on mouseDoubleUp
-   reset_Layout
-   
-   if the platform is "web" then
-   else
-      edit the script of me
-   end if
-end mouseDoubleUp
-
-on mouseDown
-   if "animationEngine" is among the lines of the stacksinuse then
-      animate_Gradient
-   else
-      --_SetLabel _NoText()
-   end if
-end mouseDown
-
-on mouseUp
-   put the short name of the target into tName  
-   switch tName
-      case "Hexagon"
-         _HexClick
-         put Stop_Flag is false into Stop_Flag
-         break
-      default
-         _NodeClick tName
-   end switch
-end mouseUp
-
 private command _HexClick
    if the platform is "web" then
-      put _TestJavasceipt ("Micro Assembly") into sJavascript
+      put js_WikiInternal ("Micro Assembly") into sJavascript
       do sJavascript as "Javascript"
    else
       if _IsVisible() is false then
@@ -356,34 +381,6 @@ private function _IsVisible pNum
    put the node_Object [pNum] of me into nodeObject
    return the visible of nodeObject
 end _IsVisible
-
-function _TestJavasceipt pageTitle, pWikiDomain
-   if pageTitle is empty then put "About Frame Plugin" into pageTitle
-   --
-   put "window.parent.postMessage({action:'doInternalLink'," into sJavascript
-   put "title: '[[pageTitle]]'," after sJavascript
-   --
-   if pWikiDomain is not empty then
-      -- site: "wiki.dbbs.co",
-      put "site: '[[pWikiDomain]]'," after sJavascript
-   end if
-   --
-   put "keepLineup: event.shiftKey" after sJavascript
-   put "}, '*');"  after sJavascript
-   --
-   replace "'" with quote in sJavascript
-   return merge (sJavascript)
-end _TestJavasceipt
-
-private function _SwitchColour nodeColour
-   switch nodeColour
-      case "black"
-         return white
-         break
-      default
-         return black
-   end switch
-end _SwitchColour
 
 private function _NodeColour nodeNum
    return item nodeNum of "red,yellow,blue,black,white,green"
@@ -561,6 +558,16 @@ private command _ResetNodeObject nodeNum, nodeObject
    
    return nodeRect
 end _ResetNodeObject
+
+private function _SwitchColour nodeColour
+   switch nodeColour
+      case "black"
+         return white
+         break
+      default
+         return black
+   end switch
+end _SwitchColour
 
 private function _NodeWidth
    return 40

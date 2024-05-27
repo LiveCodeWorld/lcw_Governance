@@ -60,6 +60,29 @@ on menu_NodesVisible hexView
    set the node_Visible of hexView to not the node_Visible of hexView 
 end menu_NodesVisible
 
+private on ___
+end ___
+
+on menu_AddStandaloneBehaviors hexView
+   put the stack_Name of hexView into stackName
+   --
+   lcw_Answer "Add behavior paths to standalone settings of stack '[[var]]'?", hexView, stackName
+   
+   put the module_BehaviorPaths of hexView into bPaths
+   set the standalone_AddPath of hexView to bPaths
+   put the result into settingsArray
+   --
+   put the stack_Name of hexView into stackName
+   display_Tool settingsArray, stackName, "Settings Array"
+end menu_AddStandaloneBehaviors
+
+on menu_DisplayStandaloneSettings hexView
+   put the standalone_SettingsArray of hexView into settingsArray
+   --
+   put the stack_Name of hexView into stackName
+   display_Tool settingsArray, stackName, "Standalone Settings"
+end menu_DisplayStandaloneSettings
+
 on submenu_Dev
    return menu_DevTitle ("Global | Governance | Hex | Menu")
 end submenu_Dev
