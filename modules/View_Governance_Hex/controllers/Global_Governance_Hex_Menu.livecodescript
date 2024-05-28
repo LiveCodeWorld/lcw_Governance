@@ -60,6 +60,25 @@ on menu_NodesVisible hexView
    set the node_Visible of hexView to not the node_Visible of hexView 
 end menu_NodesVisible
 
+getprop checked_DefaultStackRect [hexView]
+   put 400 into wikiPageWidth
+   --
+   put the stack_Name of hexView into stackName
+   put the width of stack stackName into sWidth
+   put the width of stack stackName into sHeight
+   return (sWidth = wikiPageWidth) AND (sHeight = wikiPageWidth)
+end checked_DefaultStackRect
+
+on menu_DefaultStackRect hexView
+   put the stack_Name of hexView into stackName
+   --
+   put 400 into wikiPageWidth
+   put the loc of stack stackName into sLoc
+   put rect_LocWidthHeight (sLoc, wikiPageWidth, wikiPageWidth) into newRect
+   --
+   set the rect of stack stackName to newRect
+end menu_DefaultStackRect
+
 private on ___
 end ___
 
