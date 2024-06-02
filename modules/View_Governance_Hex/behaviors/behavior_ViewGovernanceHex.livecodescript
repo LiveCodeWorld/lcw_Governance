@@ -99,7 +99,7 @@ end _CalculateNodeWidth
 
 --> Web
 -
-function js_WikiInternal pageTitle, pWikiDomain
+function jsPostMessage_Internal pageTitle, pWikiDomain
    if pageTitle is empty then put "About Frame Plugin" into pageTitle
    --
    put "window.parent.postMessage({action:'doInternalLink'," into sJavascript
@@ -115,7 +115,7 @@ function js_WikiInternal pageTitle, pWikiDomain
    --
    replace "'" with quote in sJavascript
    return merge (sJavascript)
-end js_WikiInternal
+end jsPostMessage_Internal
 
 
 --> Props | Geometry
@@ -240,7 +240,7 @@ end hex_NodeClick
 
 command hex_OpenWikiPage nodeName
    if the platform is "web" then
-      put js_WikiInternal (nodeName) into sJavascript
+      put jsPostMessage_Internal (nodeName) into sJavascript
       do sJavascript as "Javascript"
    end if
    --
@@ -535,7 +535,7 @@ end _SwitchColour
 
 private command _HexClick
    if the platform is "web" then
-      put js_WikiInternal ("Micro Assembly") into sJavascript
+      put jsPostMessage_Internal ("Micro Assembly") into sJavascript
       do sJavascript as "Javascript"
    else
       if _IsVisible() is false then
