@@ -151,11 +151,6 @@ function ix_ConstructArrowName fromView, toView
    return arrowName
 end ix_ConstructArrowName
 
-function ix_ListDisplayCharts
-   put display_FindStackNameArray (empty, empty, true) into displayViewArray
-   put display_ListStackNames
-end ix_ListDisplayCharts
-
 function ix_ListDisplayChartNames
    put stack_FindNameData ("Chart") into stackNameData
    put keys (stackNameData) into stackNames
