@@ -19,8 +19,25 @@ local Stop_Flag
 local Angle_Step = 3
 
 
+--> Wasm Hacks
+-
+setprop animate_Fast
+   -- as send and dispatch don;t work
+   animate_SpinFast
+end animate_Fast
+
+
 --> Working on
 -
+getprop hex_Label
+   put the label of _HexGraphic() into sText
+   return sText
+end hex_Label
+
+setprop hex_Label sText
+   set the label of _HexGraphic() to sText
+end hex_Label
+
 getprop gradient_Flag
    return the gradient_Flag of me
 end gradient_Flag
@@ -244,12 +261,8 @@ command hex_OpenWikiPage nodeName
       do sJavascript as "Javascript"
    end if
    --
-   hex_SetLabel nodeName
+   set the hex_Label of me to nodeName
 end hex_OpenWikiPage
-
-command hex_SetLabel sText
-   set the label of _HexGraphic() to sText
-end hex_SetLabel
 
 command hex_ResetNode nodeNum, nodeObject
    put the node_Rect [nodeNum] of me into nodeRect
@@ -299,7 +312,6 @@ on mouseDown
    if "animationEngine" is among the lines of the stacksinuse then
       animate_Gradient
    else
-      -- hex_SetLabel _NoText()
    end if
 end mouseDown
 

@@ -102,6 +102,33 @@ on menu_DisplayStandaloneSettings hexView
    display_Tool settingsArray, stackName, "Standalone Settings"
 end menu_DisplayStandaloneSettings
 
+on menu_CraftHtml hexView
+   put wasm_FetchSnippet ("html_snip.txt") into htmlSnip
+   --
+   put wasm_FetchSnippet ("body_snip.txt") into bodySnip
+   put wasm_FetchSnippet ("head_snip.txt") into headSnip
+   put wasm_FetchSnippet ("css_snip.css") into wasmCss
+   put wasm_FetchSnippet ("body_script.txt") into bodyScript
+   --
+   put "Wasm Title" into wasmTitle
+   put "standalone-10.0.2-rc-4" into standaloneStem
+   put standaloneStem & ".js" into standaloneShortJs
+   --
+   -- put merge ()
+end menu_CraftHtml
+
+function wasm_GetSnippet shortFile
+   put merge ("https://david.livecode.wiki/assets/wasm/live_wasm_snips/[[shortFile]]") into someURL
+   put url someURL into htmlSnip
+   return htmlSnip
+end wasm_GetSnippet
+
+function wasm_FetchSnippet shortFile
+   put merge ("https://david.livecode.wiki/assets/wasm/live_wasm_snips/[[shortFile]]") into someURL
+   put url someURL into htmlSnip
+   return htmlSnip
+end wasm_FetchSnippet
+
 on submenu_Dev
    return menu_DevTitle ("Global | Governance | Hex | Menu")
 end submenu_Dev
