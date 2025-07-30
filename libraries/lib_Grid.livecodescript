@@ -379,7 +379,7 @@ command tile_Create @cArray, frameRect, pTilesAcross, pTilesDown, gridView
    -- set the itemdelimiter to "|"
    switch
       case tileType contains "|"
-         put view_GetTemplateObject (tileType) into templateObject
+         put default_FirstStackControl (tileType) into templateObject
          view_InsertFromPath tileType, gridView
          put the result into tileObject
          break
