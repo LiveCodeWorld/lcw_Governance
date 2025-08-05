@@ -11,7 +11,7 @@ version: 0.2
 -
 on mDoubleUp_AsanaTask indexView, taskName
    put the selected_Index of indexView into taskName
-   put the displayed_Data of indexView into taskNameArray
+   put the displayed_Array of indexView into taskNameArray
    put taskNameArray [taskName] into taskID
    --
    if char -1 of taskName = ":" then
@@ -64,7 +64,7 @@ command display_AsanaTask taskID, pTitle
    set the line_Menu of indexView to "Global | Asana | Tree | Line | Menu"
    --
    set the task_ID of indexView to taskID
-   -- set the displayed_Data of indexView to taskData
+   -- set the displayed_Array of indexView to taskData
    return indexView
 end display_AsanaTask
 
@@ -82,7 +82,7 @@ command display_AsanaUser userID
    display_ClonedView viewName, true, "Asana User"
    put the result into personView
    --
-   set the displayed_Data of personView to dataArray
+   set the displayed_Array of personView to dataArray
    
    -- set the image_File of personView to photoURL
    rest_SetUserAgent
@@ -185,7 +185,7 @@ command display_AsanaProject projectID, projectName, pIndexView
    set the title_Menu of displayView to "Global | Asana | Project | Tree | Menu"
    set the line_Menu of displayView to "Global | Asana | Project | Tree | Line | Menu"
    --
-   set the displayed_Data of displayView to taskNameArray
+   set the displayed_Array of displayView to taskNameArray
    --
    set the meta_Data ["projectID"] of displayView to projectID
    set the meta_Data ["projectName"] of displayView to projectName
@@ -212,7 +212,7 @@ end display_AsanaWorkspaceMembers
 -
 on mDoubleUp_AsanaUser indexView, userName
    put the selected_Index of indexView into userName
-   put the displayed_Data of indexView into nameArray
+   put the displayed_Array of indexView into nameArray
    put nameArray [userName] into userID
    --
    display_AsanaUser userID
